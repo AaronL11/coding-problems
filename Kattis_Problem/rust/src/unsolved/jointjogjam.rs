@@ -1,4 +1,4 @@
-use std::{io,cmp};
+use std::io;
 use std::io::BufRead;
 
 #[allow(non_snake_case,dead_code)]
@@ -32,6 +32,9 @@ fn test_fn(input: &[u8]) -> f64 {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn jointjogjams_testmain() { main() }
 
     #[test]
     fn jointjogjams_test1() {
