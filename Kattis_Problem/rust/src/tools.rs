@@ -1,5 +1,6 @@
-use std::{io,str,error};
+use std::{io,io::BufRead,str,error};
 
+#[allow(dead_code)]
 pub fn input<T>() -> Result<T, Box<dyn error::Error>>
 where
     T: str::FromStr,
@@ -11,6 +12,7 @@ where
     Ok(parsed)
 }
 
+#[allow(dead_code)]
 pub fn vec_from_input<T>(delim: &str) -> Result<Vec<T>, Box<dyn error::Error>>
 where
     T: str::FromStr,
@@ -22,7 +24,8 @@ where
     Ok(vec)
 }
 
-pub fn get_tuple_input<const SIZE: usize, A,B>() -> Result<(A,B), Box<dyn error::Error>>
+#[allow(dead_code)]
+pub fn get_tuple_input<A,B,const SIZE: usize>() -> Result<(A,B), Box<dyn error::Error>>
 where
     A: str::FromStr,
     <A as str::FromStr>::Err: 'static + error::Error,

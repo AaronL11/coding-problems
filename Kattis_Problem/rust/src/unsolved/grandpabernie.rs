@@ -32,3 +32,9 @@ fn main() -> Result<(), Box<dyn error::Error>>{
     }
     Ok(stack.iter().for_each(|i| println!("{}",i)))
 }
+
+#[cfg(tests)]
+mod tests {
+    fn grandpabernie_test_1() {}
+}
+
