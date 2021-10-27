@@ -1,38 +1,95 @@
-use std::{io,io::BufRead,str,error};
+use std::{str,error,fmt};
+use std::io;
+use io::{stdin,Stdin,BufRead,stdout,Stdout,BufWriter,Write};
+use std::fmt::{Display,Formatter};
 
-#[allow(dead_code)]
-pub fn input<T>() -> Result<T, Box<dyn error::Error>>
-where
-    T: str::FromStr,
-    <T as str::FromStr>::Err: 'static + error::Error
-{
-    let mut line = String::new();
-    io::stdin().lock().read_line(&mut line)?;
-    let parsed = line.trim_end().parse::<T>()?;
-    Ok(parsed)
+#[derive(Debug,Default)]
+struct StopCode;
+
+impl error::Error for StopCode {}
+
+impl Display for StopCode {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        write!(f, "Code failed to execute")
+    }
 }
 
-#[allow(dead_code)]
-pub fn vec_from_input<T>(delim: &str) -> Result<Vec<T>, Box<dyn error::Error>>
-where
-    T: str::FromStr,
-    <T as str::FromStr>::Err: 'static + error::Error
-{
-    let vec = input::<String>()?;
-    let vec = (&vec).split(delim).map(|x| x.parse::<T>().unwrap());
-    let vec: Vec<T> = vec.collect();
-    Ok(vec)
+impl From<io::Error> for StopCode {
+    fn from(_: io::Error) -> StopCode { StopCode }
 }
 
-#[allow(dead_code)]
-pub fn get_tuple_input<A,B,const SIZE: usize>() -> Result<(A,B), Box<dyn error::Error>>
-where
-    A: str::FromStr,
-    <A as str::FromStr>::Err: 'static + error::Error,
-    B: str::FromStr,
-    <B as str::FromStr>::Err: 'static + error::Error
-{
-    let v = input::<String>()?;
-    let v: Vec<_> = v.split(" ").collect();
-    Ok((v[0].parse::<A>()?, v[0].parse::<B>()?))
+struct Scanner {
+    scanin: Stdin,
+    buffer: Vec<u8>,
+    iterator: str::SplitAsciiWhitespace<'static>,
 }
+
+impl Scanner {
+    fn new() -> Self {
+        Self {
+            scanin: stdin(),
+            buffer: Vec::new(),
+            iterator: "".split_ascii_whitespace()
+        }
+    }
+    fn next<T: str::FromStr>(&mut self) -> Result<T, StopCode> {
+        loop {
+            if let Some(input) = self.iterator.next() {
+                return input.parse::<T>().ok().ok_or(StopCode);
+            }
+            self.buffer.clear();
+            self.scanin.lock().read_until(b'\n',&mut self.buffer)?;
+            self.iterator = unsafe {
+                let slice = str::from_utf8_unchecked(&self.buffer);
+                std::mem::transmute(slice.split_ascii_whitespace())
+            };
+        }
+    }
+    fn take<T, const N: usize>(&mut self) -> Result<[T;N],StopCode>
+    where
+        T: str::FromStr + Default + Copy,
+        [T;N]: Default {
+        let mut result: [T;N] = Default::default();
+        for i in 0..N {
+            let n = self.next::<T>()?;
+            result[i] = n;
+        }
+       Ok(result) 
+    }
+    fn take_tuple<T, V>(&mut self) -> Result<(T,V),StopCode>
+    where
+        T: str::FromStr,
+        V: str::FromStr {
+        Ok((
+            self.next::<T>()?,
+            self.next::<V>()?
+        ))
+    }
+    fn take_tuple3<T, V, U>(&mut self) -> Result<(T,V,U),StopCode>
+    where
+        T: str::FromStr,
+        V: str::FromStr,
+        U: str::FromStr {
+        Ok((
+            self.next::<T>()?,
+            self.next::<V>()?,
+            self.next::<U>()?
+        ))
+    }
+}
+
+fn solve(
+    mut scan: Scanner,
+    mut out: BufWriter<Stdout>
+) -> Result<(), StopCode> {
+    // ...
+    Ok(out.flush()?)
+}
+
+fn main() -> Result<(), StopCode> {
+    let scan = Scanner::new();
+    let out = BufWriter::new(stdout());
+    solve(scan,out)
+}
+
+

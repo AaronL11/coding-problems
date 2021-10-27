@@ -1,4 +1,6 @@
+#[allow(unused_imports)]
 use std::io;
+#[allow(unused_imports)]
 use std::io::BufRead;
 
 #[allow(non_snake_case,dead_code)]
@@ -6,7 +8,7 @@ fn main() {
 
 }
 
-#[allow(non_snake_case,dead_code)]
+#[allow(non_snake_case,dead_code,unused_variables)]
 fn test_fn(input: &str) {
     
 }

@@ -1,6 +1,7 @@
 use std::io;
 use std::io::BufRead;
 
+#[allow(dead_code)]
 fn main() -> io::Result<()> {
     let mut buf = String::new();
     let stdin = io::stdin();
