@@ -93,11 +93,6 @@ fn solve(
     mut scan: Scanner,
     mut out: BufWriter<Stdout>
 ) -> Result<(), StopCode> {
-    use std::collections::HashSet;
-    let (n,D,M) = scan.take_tuple3::<u16,u8,u16>()?;
-    let A = scan.take::<i32>(n)?;
-    lt v: Vec<HashSet<i32>> = A.iter()
-                                .map(|i| HashSet::new())
 
     Ok(out.flush()?)
 }
@@ -107,5 +102,4 @@ fn main() -> Result<(), StopCode> {
     let out = BufWriter::new(stdout());
     solve(scan,out)
 }
-
 

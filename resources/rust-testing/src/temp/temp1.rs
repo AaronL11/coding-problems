@@ -99,10 +99,11 @@ fn solve(
     let mut sum = 0;
     let T = scan.next::<u8>()?;
     for _ in 0..T {
-        let N = scan.next::<u64>()?;
-        let med = scan.next::<u64>()?;
+        let N = scan.next::<u32>()?;
+
+        let med = scan.next::<u32>()?;
         for _ in 0..N {
-            let n = scan.next::<u64>()?;
+            let n = scan.next::<u32>()?;
             if n<=med {
                 less.push(med);
                 if less.len()==greater().len() {
