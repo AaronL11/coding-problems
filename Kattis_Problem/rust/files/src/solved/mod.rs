@@ -32,3 +32,4 @@ mod popularity;
 mod dvds;
 mod intervalscheduling;
 mod airconditioned;
+mod fizzbuzz;

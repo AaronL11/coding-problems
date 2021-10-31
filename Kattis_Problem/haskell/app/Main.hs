@@ -1,6 +1,10 @@
-solve [] = []
-solve (a:b:rest) = abs(a-b) : solve rest
-
+import Data.List (sort, group)
 main :: IO ()
-main = interact $ unlines . map show . solve . map read . words 
-
+main = interact
+	$ show
+	. foldl (\x y -> (y `div` 3)+x) 0
+	. map length
+	. group
+	. sort
+	. concat
+	. words

@@ -93,21 +93,22 @@ fn solve(
     mut scan: Scanner,
     mut out: BufWriter<Stdout>
 ) -> Result<(), StopCode> {
-    loop {
-        let (n,m) = scan.take_tuple::<usize,usize>()?;
-        if (n,m) == (0,0) { break; }
-        let mut d =scan.take::<usize>(n)?;
-        d.sort_unstable();
-        let mut h =scan.take::<usize>(m)?;
-        h.sort_unstable();
+    let (f,b,n) = scan.take_tuple3::<u8,u8,u8>()?;
+    for i in 1..=n {
+        match (i%f,i%b) {
+            (0,0) => writeln!(out,"FizzBuzz")?,
+            (0,_) => writeln!(out,"Fizz")?,
+            (_,0) => writeln!(out,"Buzz")?,
+            _ => writeln!(out,"{}",i)?
+        }
     }
     Ok(out.flush()?)
 }
 
+#[allow(dead_code)]
 fn main() -> Result<(), StopCode> {
     let scan = Scanner::new();
     let out = BufWriter::new(stdout());
     solve(scan,out)
 }
-
 
