@@ -1,10 +1,12 @@
-import Data.List (sort, group)
+solve :: Int -> [String]
+solve i = [show $ sum (take i [1..]),show $ sum (take i [1,3..]),show $ sum (take i [2,4..])]
+
 main :: IO ()
 main = interact
-	$ show
-	. foldl (\x y -> (y `div` 3)+x) 0
-	. map length
-	. group
-	. sort
-	. concat
-	. words
+	$ unlines
+	. map (unwords
+		. (\l -> show (head l) : solve (last l)) 
+		. map (read::String->Int)
+		. words)
+	. tail
+	. lines
