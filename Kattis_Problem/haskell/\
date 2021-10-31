@@ -1,5 +1,0 @@
-main :: IO()
-main = do
-        i <- getLine
-        a <- read i :: Int
-	print $ if a `mod` 2 == 1 then "Alice" else "Bob"
