@@ -2,7 +2,7 @@ import sys
 from typing import TextIO
 
 def solve(scan: TextIO, out: TextIO) -> None:
-    ...
+
     out.flush()
 
 
