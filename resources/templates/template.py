@@ -1,14 +1,7 @@
-import sys
-from typing import TextIO
-
-def solve(scan: TextIO, out: TextIO) -> None:
-
-    out.flush()
+def main():
+    input()
+    print()
 
 
-def main() -> None:
-    scan = sys.stdin
-    out = sys.stdout
-    solve(scan, out)
-
-main()
+if __name__ == "__main__":
+    main()
