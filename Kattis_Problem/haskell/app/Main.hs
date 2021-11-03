@@ -1,12 +1,9 @@
-solve :: Int -> [String]
-solve i = [show $ sum (take i [1..]),show $ sum (take i [1,3..]),show $ sum (take i [2,4..])]
+solve :: Double -> Double
+solve 0 = 1
+solve n = 1.0/product [1..n] + solve (n-1)
 
 main :: IO ()
 main = interact
-	$ unlines
-	. map (unwords
-		. (\l -> show (head l) : solve (last l)) 
-		. map (read::String->Int)
-		. words)
-	. tail
-	. lines
+        $ show
+	. solve
+	. read

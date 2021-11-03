@@ -34,9 +34,12 @@ impl Scanner {
         }
     }
     fn next<T: str::FromStr>(&mut self) -> Result<T, StopCode> {
+        self.get_str()?.parse::<T>().ok().ok_or(StopCode)
+    }
+    fn get_str(&mut self) -> Result<&str,StopCode> {
         loop {
             if let Some(input) = self.iterator.next() {
-                return input.parse::<T>().ok().ok_or(StopCode)
+                return Ok(input)
             }
             self.buffer.clear();
             self.scanin.lock().read_until(b'\n',&mut self.buffer)?;
@@ -93,19 +96,20 @@ fn solve(
     mut scan: Scanner,
     mut out: BufWriter<Stdout>
 ) -> Result<(), StopCode> {
-    let (f,b,n) = scan.take_tuple3::<u8,u8,u8>()?;
-    for i in 1..=n {
-        match (i%f,i%b) {
-            (0,0) => writeln!(out,"FizzBuzz")?,
-            (0,_) => writeln!(out,"Fizz")?,
-            (_,0) => writeln!(out,"Buzz")?,
-            _ => writeln!(out,"{}",i)?
+    let (m,a) = scan.take_tuple::<u32,u32>()?;
+    let (b,c) = scan.take_tuple::<u32,u32>()?;
+    writeln!(
+        out,
+        "{}",
+        if (2*m)>=(a+b+c) {
+            "possible"
+        } else {
+            "impossible"
         }
-    }
+        )?;
     Ok(out.flush()?)
 }
 
-#[allow(dead_code)]
 fn main() -> Result<(), StopCode> {
     let scan = Scanner::new();
     let out = BufWriter::new(stdout());

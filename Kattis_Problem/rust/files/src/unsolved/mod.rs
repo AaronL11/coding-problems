@@ -8,3 +8,4 @@ mod joinstrings;
 mod hopper;
 mod minimumscalar;
 mod workstations;
+mod drmmessages;

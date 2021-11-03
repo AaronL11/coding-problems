@@ -24,6 +24,7 @@ struct Scanner {
     iterator: str::SplitAsciiWhitespace<'static>,
 }
 
+#[allow(dead_code)]
 impl Scanner {
     fn new() -> Self {
         Self {
@@ -33,9 +34,12 @@ impl Scanner {
         }
     }
     fn next<T: str::FromStr>(&mut self) -> Result<T, StopCode> {
+        self.get_str()?.parse::<T>().ok().ok_or(StopCode)
+    }
+    fn get_str(&mut self) -> Result<&str,StopCode> {
         loop {
             if let Some(input) = self.iterator.next() {
-                return input.parse::<T>().ok().ok_or(StopCode);
+                return Ok(input)
             }
             self.buffer.clear();
             self.scanin.lock().read_until(b'\n',&mut self.buffer)?;
@@ -44,18 +48,28 @@ impl Scanner {
                 std::mem::transmute(slice.split_ascii_whitespace())
             };
         }
+
     }
-    fn take<T, const N: usize>(&mut self) -> Result<[T;N],StopCode>
-    where
-        T: str::FromStr + Default + Copy,
-        [T;N]: Default {
-        let mut result: [T;N] = Default::default();
-        for i in 0..N {
-            let n = self.next::<T>()?;
-            result[i] = n;
+    fn take<T: str::FromStr>(&mut self, n: usize) -> Result<Vec<T>,StopCode> {
+        let mut result = Vec::with_capacity(n);
+        for _ in 0..n {
+            let i = self.next::<T>()?;
+            result.push(i);
         }
-       Ok(result) 
+        Ok(result)
     }
+    // Only works after const generics were stabilized!!
+    //fn take<T, const N: usize>(&mut self) -> Result<[T;N],StopCode>
+    //where
+    //    T: str::FromStr + Default + Copy,
+    //    [T;N]: Default {
+    //    let mut result: [T;N] = Default::default();
+    //    for i in 0..N {
+    //        let n = self.next::<T>()?;
+    //        result[i] = n;
+    //    }
+    //   Ok(result) 
+    //}
     fn take_tuple<T, V>(&mut self) -> Result<(T,V),StopCode>
     where
         T: str::FromStr,
@@ -78,6 +92,7 @@ impl Scanner {
     }
 }
 
+#[allow(non_snake_case)]
 fn solve(
     mut scan: Scanner,
     mut out: BufWriter<Stdout>
@@ -91,5 +106,7 @@ fn main() -> Result<(), StopCode> {
     let out = BufWriter::new(stdout());
     solve(scan,out)
 }
+
+
 
 
