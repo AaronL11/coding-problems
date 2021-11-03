@@ -41,3 +41,6 @@ mod moscowdream;
 mod wizardofodds;
 mod judgingmoose;
 mod eatingout;
+mod avion;
+mod drinkingsong;
+mod backspace;

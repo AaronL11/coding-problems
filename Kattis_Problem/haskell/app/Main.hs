@@ -1,9 +1,15 @@
-solve :: Double -> Double
-solve 0 = 1
-solve n = 1.0/product [1..n] + solve (n-1)
 
-main :: IO ()
+solve' :: String -> String -> String -> String
+solve' = undefined
+
+solve :: [[String]] -> [String]
+solve [] = []
+solve ([s,n,l]:rest) = solve' s n l : solve rest
+solve [_] = undefined
+
+main :: IO()
 main = interact
-        $ show
+	$ unlines
 	. solve
-	. read
+	. tail
+	. lines

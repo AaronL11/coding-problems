@@ -96,17 +96,38 @@ fn solve(
     mut scan: Scanner,
     mut out: BufWriter<Stdout>
 ) -> Result<(), StopCode> {
-    let (m,a) = scan.take_tuple::<u32,u32>()?;
-    let (b,c) = scan.take_tuple::<u32,u32>()?;
-    writeln!(
-        out,
-        "{}",
-        if (2*m)>=(a+b+c) {
-            "possible"
-        } else {
-            "impossible"
-        }
-        )?;
+    let T = scan.next::<u8>()?;
+     for _ in 0..T {
+         let s = scan.get_str()?.to_owned();
+         let n = scan.next::<u32>()?;
+         dbg!(&n);
+         let mut l = if n>0 {
+                        scan.get_str()?
+                            .trim_start_matches('[')
+                            .trim_end_matches(']')
+                            .split(',')
+                            .map(|s| s.parse::<u8>().unwrap())
+                            .collect::<Vec<_>>()
+         } else {
+             vec![]
+         };
+         let mut err = false;
+         for c in s.chars() {
+            if l.len()==0 {
+                err=true;
+                break
+            } else if c=='R' {
+                l.reverse();
+            } else if c=='D' {
+                l.pop();
+            }
+         }
+         if err {
+             writeln!(out,"error")?;
+         } else {
+             writeln!(out,"{:?}",l)?;
+         }
+     }
     Ok(out.flush()?)
 }
 
