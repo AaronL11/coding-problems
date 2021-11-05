@@ -91,43 +91,74 @@ impl Scanner {
     }
 }
 
+fn two(scan: &mut Scanner) -> Result<&str,StopCode> {
+    let (a,b) = scan.take_tuple::<u32,u32>()?;
+    if a>b {
+        Ok("Bigger")
+    } else if a<b {
+        Ok("Smaller")
+    } else {
+        Ok("Equal")
+    }
+}
+
+fn three(scan: &mut Scanner) -> Result<u32,StopCode> {
+    let (a,b,c) = scan.take_tuple3::<u32,u32,u32>()?;
+    let mut t = [a,b,c];
+    t.sort();
+    Ok(t[1])
+}
+
+#[allow(unused_assignments)]
+fn seven(scan: &mut Scanner, n: usize) -> Result<&str,StopCode> {
+    use std::collections::HashSet;
+    let mut result = "Cyclic";
+    let mut used = HashSet::new();
+    let v = scan.take::<usize>(n)?;
+    let mut i = 0_usize;
+    used.insert(0_usize);
+    loop {
+        i = v[i];
+        if used.contains(&i) {
+            result = "Cyclic";
+            break
+        } else if i>=n {
+            result = "Out";
+            break
+        } else if i==n-1 {
+            result = "Done";
+            break
+        }
+        used.insert(i);
+    }
+    Ok(result)
+}
+
 #[allow(non_snake_case)]
 fn solve(
     mut scan: Scanner,
     mut out: BufWriter<Stdout>
 ) -> Result<(), StopCode> {
-    let T = scan.next::<u8>()?;
-     for _ in 0..T {
-         let s = scan.get_str()?.to_owned();
-         let n = scan.next::<u32>()?;
-         dbg!(&n);
-         let mut l = if n>0 {
-                        scan.get_str()?
-                            .trim_start_matches('[')
-                            .trim_end_matches(']')
-                            .split(',')
-                            .map(|s| s.parse::<u8>().unwrap())
-                            .collect::<Vec<_>>()
-         } else {
-             vec![]
-         };
-         let mut err = false;
-         for c in s.chars() {
-            if l.len()==0 {
-                err=true;
-                break
-            } else if c=='R' {
-                l.reverse();
-            } else if c=='D' {
-                l.pop();
-            }
-         }
-         if err {
-             writeln!(out,"error")?;
-         } else {
-             writeln!(out,"{:?}",l)?;
-         }
-     }
+    let (N,t) = scan.take_tuple::<usize,u8>()?;
+    let result = match t {
+        1 => String::from("7"),
+        2 => String::from(two(&mut scan)?),
+        3 => three(&mut scan)?.to_string(),
+        4 => scan.take::<u64>(N)?
+                    .iter()
+                    .sum::<u64>().to_string(),
+        5 => scan.take::<u64>(N)?.iter()
+                .filter(|&i| *i%2==0)
+                .sum::<u64>().to_string(),
+        6 => unsafe {String::from(str::from_utf8_unchecked(
+                &scan.take::<u32>(N)?
+                    .iter()
+                    .map(|&i| (i%26) as u8 + 97)
+                    .collect::<Vec<u8>>()))},
+        7 => String::from(seven(&mut scan, N)?),
+        _ => panic!()
+    };
+    writeln!(out,"{}",result)?;
     Ok(out.flush()?)
 }
 
