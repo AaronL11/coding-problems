@@ -34,9 +34,12 @@ impl Scanner {
         }
     }
     fn next<T: str::FromStr>(&mut self) -> Result<T, StopCode> {
+        self.get_str()?.parse::<T>().ok().ok_or(StopCode)
+    }
+    fn get_str(&mut self) -> Result<&str,StopCode> {
         loop {
             if let Some(input) = self.iterator.next() {
-                return input.parse::<T>().ok().ok_or(StopCode)
+                return Ok(input)
             }
             self.buffer.clear();
             self.scanin.lock().read_until(b'\n',&mut self.buffer)?;
@@ -88,36 +91,34 @@ impl Scanner {
     }
 }
 
+fn print_recursive(
+    out: &mut BufWriter<Stdout>,
+    c: &Vec<Vec<usize>>,
+    w: &Vec<String>,
+    idx: usize
+) -> Result<(),StopCode> {
+    write!(out,"{}",w[idx])?;
+    for i in &c[idx] {
+        print_recursive(out,c,w,*i)?;
+    }
+    Ok(())
+}
+
 #[allow(non_snake_case)]
 fn solve(
     mut scan: Scanner,
     mut out: BufWriter<Stdout>
 ) -> Result<(), StopCode> {
     let N = scan.next::<usize>()?;
-    let buffer: Vec<u8> = Vec::with_capacity(N);
-    let mut words: Vec<&'static mut str> = Vec::with_capacity(N);
-    let mut slice: &'static mut str;
-    for i in 0..N {
-        scan.scanin.lock().read_until(b'\n',&mut buffer)?;
-        slice = unsafe {
-            &mut str::from_utf8_unchecked(&buffer)
-        };
-        words.push(slice);
-        buffer.clear();
-    }
-
-
-    for _ in 0..N-1 {
+    let words = scan.take::<String>(N)?;
+    let mut commands: Vec<Vec<usize>> = vec![vec![];N];
+    let mut last = 0;
+    for _ in 1..N {
         let (a,b) = scan.take_tuple::<usize,usize>()?;
-        let (a,b) = (a-1,b-1);
-        words[a] = &mut [words[a],words[b]].join("")[..];
-        words[b] = &mut "";
+        commands[a-1].push(b-1);
+        last = a-1;
     }
-    words.retain(|s| s!=&mut "");
-    writeln!(out,"{}",words[0])?;
-
-
-
+    print_recursive(&mut out, &commands, &words, last)?;
     Ok(out.flush()?)
 }
 
@@ -126,6 +127,5 @@ fn main() -> Result<(), StopCode> {
     let out = BufWriter::new(stdout());
     solve(scan,out)
 }
-
 
 

@@ -1,27 +1,22 @@
-counter :: Char -> Char
-counter a
-  | a == 'R' = 'S'
-  | a == 'B' = 'K'
-  | a == 'L' = 'H'
-  | otherwise = undefined
+solve :: String -> String -> String
+solve s c
+  | s == "A#" = "Bb" ++ " " ++ c
+  | s == "Bb" = "A#" ++ " " ++ c
+  | s == "C#" = "Db" ++ " " ++ c
+  | s == "Db" = "C#" ++ " " ++ c
+  | s == "D#" = "Eb" ++ " " ++ c
+  | s == "Eb" = "D#" ++ " " ++ c
+  | s == "F#" = "Gb" ++ " " ++ c
+  | s == "Gb" = "F#" ++ " " ++ c
+  | s == "Ab" = "G#" ++ " " ++ c
+  | s == "G#" = "Ab" ++ " " ++ c
+  | otherwise = "UNIQUE"
 
-solve :: String -> String
-solve "" = ""
-solve [a] = [counter a]
-solve [a,b] = [counter a, counter b]
-solve [a,b,c]
-  | a == 'R' && ((b == 'L' && c == 'B') || (b == 'B' && c == 'L')) = ['C']
-  | a == 'B' && ((b == 'L' && c == 'R') || (b == 'R' && c == 'L')) = ['C']
-  | a == 'L' && ((b == 'R' && c == 'B') || (b == 'B' && c == 'R')) = ['C']
-  | otherwise = [counter a, counter b, counter c]
-solve (a:b:c:rest)
-  | a == 'R' && ((b == 'L' && c == 'B') || (b == 'B' && c == 'L')) = 'C':solve rest
-  | a == 'B' && ((b == 'L' && c == 'R') || (b == 'R' && c == 'L')) = 'C':solve rest
-  | a == 'L' && ((b == 'R' && c == 'B') || (b == 'B' && c == 'R')) = 'C':solve rest
-  | otherwise = counter a : solve (b:c:rest)
 
-main :: IO()
+main :: IO ()
 main = interact
-	$ unwords
-	. map solve
-	. words
+	$ unlines
+	. map (\(n,s) -> "Case " ++ show n ++ ": " ++ s)
+	. map (\(n,s) -> (n, solve (take 2 s) (drop 3 s)))
+	. zip [1..5]
+	. lines

@@ -91,74 +91,83 @@ impl Scanner {
     }
 }
 
-fn two(scan: &mut Scanner) -> Result<&str,StopCode> {
-    let (a,b) = scan.take_tuple::<u32,u32>()?;
-    if a>b {
-        Ok("Bigger")
-    } else if a<b {
-        Ok("Smaller")
-    } else {
-        Ok("Equal")
-    }
-}
-
-fn three(scan: &mut Scanner) -> Result<u32,StopCode> {
-    let (a,b,c) = scan.take_tuple3::<u32,u32,u32>()?;
-    let mut t = [a,b,c];
-    t.sort();
-    Ok(t[1])
-}
-
-#[allow(unused_assignments)]
-fn seven(scan: &mut Scanner, n: usize) -> Result<&str,StopCode> {
-    use std::collections::HashSet;
-    let mut result = "Cyclic";
-    let mut used = HashSet::new();
-    let v = scan.take::<usize>(n)?;
-    let mut i = 0_usize;
-    used.insert(0_usize);
-    loop {
-        i = v[i];
-        if used.contains(&i) {
-            result = "Cyclic";
-            break
-        } else if i>=n {
-            result = "Out";
-            break
-        } else if i==n-1 {
-            result = "Done";
-            break
-        }
-        used.insert(i);
-    }
-    Ok(result)
-}
-
 #[allow(non_snake_case)]
 fn solve(
     mut scan: Scanner,
     mut out: BufWriter<Stdout>
 ) -> Result<(), StopCode> {
+    use std::collections::{HashMap,HashSet};
+    use std::iter::FromIterator;
     let (N,t) = scan.take_tuple::<usize,u8>()?;
-    let result = match t {
-        1 => String::from("7"),
-        2 => String::from(two(&mut scan)?),
-        3 => three(&mut scan)?.to_string(),
-        4 => scan.take::<u64>(N)?
-                    .iter()
-                    .sum::<u64>().to_string(),
-        5 => scan.take::<u64>(N)?.iter()
-                .filter(|&i| *i%2==0)
-                .sum::<u64>().to_string(),
-        6 => unsafe {String::from(str::from_utf8_unchecked(
-                &scan.take::<u32>(N)?
-                    .iter()
-                    .map(|&i| (i%26) as u8 + 97)
-                    .collect::<Vec<u8>>()))},
-        7 => String::from(seven(&mut scan, N)?),
+    match t {
+        1 => {
+            let set: HashSet<u32> = HashSet::from_iter(
+                                                (0..N).into_iter()
+                                                    .map(
+                                                        |_|
+                                                        scan.next::<u32>().unwrap())
+                                                    );
+            let mut res = "No";
+            for i in &set {
+                if set.contains(&(7777-*i)) {
+                    res = "Yes";
+                    break
+                }
+            }
+            writeln!(out,"{}",res)?;
+        },
+        2 => {
+            let set: HashSet<u32> = HashSet::from_iter(
+                                                (0..N).into_iter()
+                                                    .map(
+                                                        |_|
+                                                        scan.next::<u32>().unwrap())
+                                                    );
+            if set.len() == N {
+                writeln!(out,"Unique")?;
+            } else {
+                writeln!(out,"Contains duplicate")?;
+            }
+        },
+        3 => {
+            let mut count: HashMap<usize,usize> = HashMap::new();
+            let mut res = -1;
+            for _ in 0..N {
+                let i = scan.next::<usize>()?;
+                if let Some(num) = count.get_mut(&i) {
+                    *num += 1;
+                    if *num > N/2 {
+                        res = i as isize;
+                        break
+                    }
+                } else {
+                    count.insert(i,1);
+                }
+            }
+            writeln!(out,"{}",res)?;
+        },
+        4 => {
+            let mut A = scan.take::<u32>(N)?;
+            A.sort();
+            if N%2==1 {
+                writeln!(out,"{}",A[N/2])?;
+            } else {
+                writeln!(out,"{} {}",A[N/2-1],A[N/2])?;
+            }
+        },
+        5 => {
+            let mut B = (0..N).into_iter()
+                            .map(|_| scan.next::<u32>().unwrap())
+                            .filter(|&i| 100<=i && i<=999)
+                            .collect::<Vec<u32>>();
+            B.sort();
+            write!(out,"{}",B[0])?;
+            for i in 1..B.len() {
+                write!(out," {}",B[i])?;
+            }
+        },
         _ => panic!()
-    };
-    writeln!(out,"{}",result)?;
+    }
     Ok(out.flush()?)
 }
 

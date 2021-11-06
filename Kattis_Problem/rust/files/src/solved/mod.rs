@@ -46,3 +46,8 @@ mod drinkingsong;
 mod backspace;
 mod delimitersoup;
 mod basicprogramming1;
+mod basicprogramming2;
+mod breakingbranches;
+mod joinstrings;
+mod speeding;
+mod euclideantsp;
