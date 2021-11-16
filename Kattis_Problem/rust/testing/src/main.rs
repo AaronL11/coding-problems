@@ -3,6 +3,11 @@ use std::io;
 use io::{stdin,Stdin,BufRead,stdout,Stdout,BufWriter,Write};
 use std::fmt::{Display,Formatter};
 
+type Int = usize;
+#[allow(dead_code)]
+const MOD: Int = 1_000_000_007;
+
+
 #[derive(Debug,Default)]
 struct StopCode;
 
@@ -91,82 +96,67 @@ impl Scanner {
     }
 }
 
+use std::collections::HashMap;
+
+struct DP {
+    memo: HashMap<Int,Int>
+}
+
+impl DP {
+    fn new() -> Self {
+        let mut memo = HashMap::new();
+        memo.insert(0,0);
+        memo.insert(1,1);
+        memo.insert(2,1);
+        Self { memo }
+    }
+    fn fib(&mut self, n: Int) -> Int {
+
+        if let Some(&i) = self.memo.get(&n) {
+            i
+        } else {
+            let k = n/2;
+            let a = if let Some(&a) = self.memo.get(&k) {
+                a
+            } else {
+                let fib = self.fib(k) % MOD;
+                self.memo.insert(k+1,fib);
+                self.memo[&k]
+            };
+            let b = if let Some(&b) = self.memo.get(&(k+1)) {
+                b
+            } else {
+                let fib = self.fib(k+1) % MOD;
+                self.memo.insert(k+1,fib);
+                self.memo[&(k+1)]
+            };
+            self.memo.insert(
+                n,
+                if n%2==0 {
+                    a*(2*b-a) % MOD
+                } else {
+                    a*a + b*b
+                }
+            );
+            self.memo[&n]
+        }
+    }
+}
+
 #[allow(non_snake_case)]
 fn solve(
     mut scan: Scanner,
     mut out: BufWriter<Stdout>
 ) -> Result<(), StopCode> {
-    use std::collections::{HashMap,HashSet};
-    use std::iter::FromIterator;
-    let (N,t) = scan.take_tuple::<usize,u8>()?;
-    match t {
-        1 => {
-            let set: HashSet<u32> = HashSet::from_iter(
-                                                (0..N).into_iter()
-                                                    .map(
-                                                        |_|
-                                                        scan.next::<u32>().unwrap())
-                                                    );
-            let mut res = "No";
-            for i in &set {
-                if set.contains(&(7777-*i)) {
-                    res = "Yes";
-                    break
-                }
-            }
-            writeln!(out,"{}",res)?;
-        },
-        2 => {
-            let set: HashSet<u32> = HashSet::from_iter(
-                                                (0..N).into_iter()
-                                                    .map(
-                                                        |_|
-                                                        scan.next::<u32>().unwrap())
-                                                    );
-            if set.len() == N {
-                writeln!(out,"Unique")?;
-            } else {
-                writeln!(out,"Contains duplicate")?;
-            }
-        },
-        3 => {
-            let mut count: HashMap<usize,usize> = HashMap::new();
-            let mut res = -1;
-            for _ in 0..N {
-                let i = scan.next::<usize>()?;
-                if let Some(num) = count.get_mut(&i) {
-                    *num += 1;
-                    if *num > N/2 {
-                        res = i as isize;
-                        break
-                    }
-                } else {
-                    count.insert(i,1);
-                }
-            }
-            writeln!(out,"{}",res)?;
-        },
-        4 => {
-            let mut A = scan.take::<u32>(N)?;
-            A.sort();
-            if N%2==1 {
-                writeln!(out,"{}",A[N/2])?;
-            } else {
-                writeln!(out,"{} {}",A[N/2-1],A[N/2])?;
-            }
-        },
-        5 => {
-            let mut B = (0..N).into_iter()
-                            .map(|_| scan.next::<u32>().unwrap())
-                            .filter(|&i| 100<=i && i<=999)
-                            .collect::<Vec<u32>>();
-            B.sort();
-            write!(out,"{}",B[0])?;
-            for i in 1..B.len() {
-                write!(out," {}",B[i])?;
-            }
-        },
-        _ => panic!()
+    let mut dp = DP::new();
+    for _ in 0..scan.next::<u8>()? {
+        let (K,Y) = scan.take_tuple::<u8,Int>()?;
+        writeln!(
+            out,
+            "{} {}",
+            K,
+            dp.fib(Y) % MOD
+            )?;
     }
     Ok(out.flush()?)
 }
