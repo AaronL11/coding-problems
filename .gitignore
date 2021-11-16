@@ -1,6 +1,6 @@
-.lock
-.cabal
-.png
-.toml
-/dist-newstyle
-/target
+*.lock
+*.cabal
+*.png
+*.toml
+dist-newstyle/
+target/
