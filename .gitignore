@@ -1,6 +1,14 @@
-*.lock
-*.cabal
-*.png
-*.toml
-dist-newstyle/
+# Haskell
+dist-*
+.cabal
 target/
+
+*.lock
+
+# Rust
+debug/
+target/
+Cargo.lock
+**/*.rs.bk
+.pdb
+

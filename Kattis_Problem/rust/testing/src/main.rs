@@ -114,7 +114,7 @@ impl DP {
 
         if let Some(&i) = self.memo.get(&n) {
             i
-        } else {
+        } else if n%2==0 {
             let k = n/2;
             let a = if let Some(&a) = self.memo.get(&k) {
                 a
@@ -123,20 +123,39 @@ impl DP {
                 self.memo.insert(k+1,fib);
                 self.memo[&k]
             };
-            let b = if let Some(&b) = self.memo.get(&(k+1)) {
+            let b = if let Some(&b) = self.memo.get(&(k-1)) {
                 b
             } else {
-                let fib = self.fib(k+1) % MOD;
-                self.memo.insert(k+1,fib);
-                self.memo[&(k+1)]
+                let fib = self.fib(k-1) % MOD;
+                self.memo.insert(k-1,fib);
+                self.memo[&(k-1)]
             };
             self.memo.insert(
                 n,
-                if n%2==0 {
-                    a*(2*b-a) % MOD
-                } else {
-                    a*a + b*b
-                }
+                (a*(2*b+a))
+                % MOD
+            );
+            self.memo[&n]
+        } else {
+            let k = (n+1)/2;
+            let a = if let Some(&a) = self.memo.get(&k) {
+                a
+            } else {
+                let fib = self.fib(k);
+                self.memo.insert(k+1,fib);
+                self.memo[&k]
+            };
+            let b = if let Some(&b) = self.memo.get(&(k-1)) {
+                b
+            } else {
+                let fib = self.fib(k-1);
+                self.memo.insert(k-1,fib);
+                self.memo[&(k-1)]
+            };
+            self.memo.insert(
+                n,
+                (a*a + b*b)
+                % MOD
             );
             self.memo[&n]
         }
