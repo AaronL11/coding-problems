@@ -3,6 +3,11 @@ use std::io;
 use io::{stdin,Stdin,BufRead,stdout,Stdout,BufWriter,Write};
 use std::fmt::{Display,Formatter};
 
+type Int = usize;
+#[allow(dead_code)]
+const MOD: Int = 1_000_000_007;
+
+
 #[derive(Debug,Default)]
 struct StopCode;
 
@@ -96,51 +101,15 @@ fn solve(
     mut scan: Scanner,
     mut out: BufWriter<Stdout>
 ) -> Result<(), StopCode> {
-    use std::cmp::min;
-    let P = scan.get_str()?
-                .bytes()
-                .map(|b| if b==b'R' { (1,-1) } else { (-1,1) })
-                .collect::<Vec<(isize,isize)>>();
-    let (mut bb,mut br) = (P[0].1,P[0].0);
-    let (mut sb,mut sr) = (P[0].1,P[0].0);
-    let (mut lb,mut rb) = (0,0);
-    let (mut lr,mut rr) = (0,0);
-    let (mut mlb,mut mrb) = (0,0);
-    let (mut mlr,mut mrr) = (0,0);
-    for i in 1..P.len() {
-        let (r,b) = P[i];
-        if r > r + sr {
-            sr = r;
-            lr = i;
-        } else {
-            sr += r;
-        }
-        rr = i;
-        if sr > br {
-            br = sr;
-            mlr = lr;
-            mrr = rr;
-        }
-        if b > b + sb {
-            sb = b;
-            lb = i;
-        } else {
-            sb += b;
-        }
-        rb = i;
-        if sb > bb {
-            bb = sb;
-            mlb = lb;
-            mrb = rb;
-        }
-    }
-    if bb > br {
-        writeln!(out,"{} {}",mlb+1,mrb+1)?;
-    } else if bb == br {
-        writeln!(out,"{} {}",min(mlb,mlr)+1,min(mrb,mrr)+1)?;
-    } else {
-        writeln!(out,"{} {}",mlr+1,mrr+1)?;
-    }
+    let n = scan.next::<usize>()?;
+    let mut v = scan.take::<u32>(n)?;
+    v.sort_unstable_by(|a,b| b.cmp(&a));
+    writeln!(
+        out,
+        "{}",
+        v.chunks(3)
+        .fold(0,|sum,c| sum + if c.len()>1 { c[0]+c[1]} else { c[0] })
+        )?;
     Ok(out.flush()?)
 }
 
@@ -149,5 +118,4 @@ fn main() -> Result<(), StopCode> {
     let out = BufWriter::new(stdout());
     solve(scan,out)
 }
-
 

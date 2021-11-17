@@ -5,7 +5,7 @@ use std::fmt::{Display,Formatter};
 
 type Int = usize;
 #[allow(dead_code)]
-const MOD: Int = 1_000_000_007;
+const MOD: Int = 1_000_000_000;
 
 
 #[derive(Debug,Default)]
@@ -96,14 +96,62 @@ impl Scanner {
     }
 }
 
+use std::collections::HashMap;
+
+struct DP {
+    memo: HashMap<Int,Int>
+}
+
+impl DP {
+    fn new() -> Self {
+        let mut memo = HashMap::new();
+        memo.insert(0,0);
+        memo.insert(1,1);
+        memo.insert(2,1);
+        Self { memo }
+    }
+    fn fib(&mut self, n: Int) -> Int {
+
+        if let Some(&i) = self.memo.get(&n) {
+            i
+        } else {
+            if n%2==0 {
+                let k = n/2;
+                let (a,b) = (self.fib(k),self.fib(k-1));
+                self.memo.insert(
+                    n,
+                    (a*(2*b+a))
+                    % MOD
+                );
+            } else {
+                let k = (n+1)/2;
+                let (a,b) = (self.fib(k),self.fib(k-1));
+                self.memo.insert(
+                    n,
+                    (a*a + b*b)
+                    % MOD
+                );
+            }
+            self.memo[&n]
+        }
+    }
+}
+
 #[allow(non_snake_case)]
 fn solve(
     mut scan: Scanner,
     mut out: BufWriter<Stdout>
 ) -> Result<(), StopCode> {
-    let n = scan.next::<usize>()?;
-    let mut v = scan.take::<u32>(n)?;
-    writeln!(out,"")?;
+    let mut dp = DP::new();
+    for _ in 0..scan.next::<u8>()? {
+        let (K,Y) = scan.take_tuple::<u8,Int>()?;
+        writeln!(
+            out,
+            "{} {}",
+            K,
+            dp.fib(Y)
+            )?;
+    }
     Ok(out.flush()?)
 }
 
@@ -112,3 +160,5 @@ fn main() -> Result<(), StopCode> {
     let out = BufWriter::new(stdout());
     solve(scan,out)
 }
+
+

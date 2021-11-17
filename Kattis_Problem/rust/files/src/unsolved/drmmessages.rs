@@ -2,18 +2,24 @@ use std::io;
 use io::{Read,Write};
 
 fn main() -> io::Result<()> {
-    let mut buf: [u8;15_000] = [0;15_000];
+    let mut buf: [u8;15_001] = [0;15_001];
     let n = io::stdin().lock().read(&mut buf)?-1;
-    dbg!(&n);
-    let (l,r) = buf[..n].split_at_mut(n/2);
-    for i in 0..n/2 {
-        l[i] -= 65;
-        r[i] -= 65;
+    for x in buf[..n].iter_mut() {
+        *x -= 65;
     }
-    let (sl,sr) = (l.iter().sum::<u8>(),
-                    r.iter().sum::<u8>());
+    let (l,r) = buf[..n].split_at_mut(n/2);
+    let (sl,sr) = (
+        l.iter().fold(0u16,|p,c| p+*c as u16),
+        r.iter().fold(0u16,|p,c| p+*c as u16)
+        );
     for i in 0..n/2 {
-        l[i] = (((l[i]+sl)%26+(r[i]+sr)%26)%26)+65
+        l[i] = (
+            ((l[i] as u16+sl)%26) as u8
+            +
+            ((r[i] as u16+sr)%26) as u8
+        )%26+65
     }
     io::stdout().lock().write_all(&l)
 }
+
+

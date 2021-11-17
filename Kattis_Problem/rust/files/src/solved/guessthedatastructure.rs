@@ -101,9 +101,68 @@ fn solve(
     mut scan: Scanner,
     mut out: BufWriter<Stdout>
 ) -> Result<(), StopCode> {
-    let n = scan.next::<usize>()?;
-    let mut v = scan.take::<u32>(n)?;
-    writeln!(out,"")?;
+    use std::collections::{VecDeque,BinaryHeap};
+    const SIZE: usize = 1000;
+    let mut stack = Vec::with_capacity(SIZE);
+    let mut prique = BinaryHeap::with_capacity(SIZE);
+    let mut deque = VecDeque::with_capacity(SIZE);
+    let mut buf = String::new();
+    loop {
+        stdin().lock().read_line(&mut buf)?;
+        let n = buf.trim_end();
+        if n=="" { break }
+        let n = n.parse::<Int>().unwrap();
+        let (mut s,mut p,mut d) = (true,true,true);
+        for _ in 0..n {
+            let (t,v) = scan.take_tuple::<u8,u8>()?;
+            match t {
+                1 => {
+                    stack.push(v);
+                    deque.push_back(v);
+                    prique.push(v);
+                }
+                2 => {
+                    if s {
+                        s = if let Some(x) = stack.pop() {
+                            if v==x { true } else { false }
+                        } else {
+                            false
+                        }
+                    }
+                    if p {
+                        p = if let Some(x) = prique.pop() {
+                            if v==x { true } else { false }
+                        } else {
+                            false
+                        }
+                    }
+                    if d {
+                        d = if let Some(x) = deque.pop_front() {
+                            if v==x { true } else { false }
+                        } else {
+                            false
+                        }
+                    }
+                }
+                _ => unreachable!()
+            }
+        }
+        if s && p || s && d || d && p {
+            writeln!(out,"not sure")?;
+        } else if s {
+            writeln!(out,"stack")?;
+        } else if p {
+            writeln!(out,"priority queue")?;
+        } else if d {
+            writeln!(out,"queue")?;
+        } else {
+            writeln!(out,"impossible")?;
+        }
+        stack.clear();
+        prique.clear();
+        deque.clear();
+        buf.clear()
+    }
     Ok(out.flush()?)
 }
 
@@ -112,3 +171,4 @@ fn main() -> Result<(), StopCode> {
     let out = BufWriter::new(stdout());
     solve(scan,out)
 }
+

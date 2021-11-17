@@ -66,3 +66,8 @@ mod warehouse;
 mod sortofsorting;
 mod addingwords;
 mod spellingbee;
+mod porpoises;
+mod purplerain;
+mod bookingaroom;
+mod guessthedatastructure;
+mod akcija;

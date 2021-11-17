@@ -4,7 +4,9 @@ use io::{stdin,Stdin,BufRead,stdout,Stdout,BufWriter,Write};
 use std::fmt::{Display,Formatter};
 
 type Int = usize;
+#[allow(dead_code)]
 const MOD: Int = 1_000_000_007;
+
 
 #[derive(Debug,Default)]
 struct StopCode;
@@ -94,76 +96,21 @@ impl Scanner {
     }
 }
 
-const DP_SIZE: Int = 10_0001;
-
-use std::cmp::min;
-use std::collections::HashMap;
-
-struct DP<'a> {
-    memo: HashMap<&'a [u8;23],Int>
-}
-
-impl DP<'_> {
-    fn new() -> Self {
-        Self { memo: HashMap::new() }
-    }
-    fn boards(&mut self, b: &mut Vec<u8>) -> Int {
-        let mut count = b.iter()
-                        .filter(|&b| b==&b'o')
-                        .count();
-        for i in 0..b.len()-2 {
-            match (b[i],b[i+1],b[i+2]) {
-                (b'o',b'o',b'-') => {
-                    b[i] = b'-';
-                    b[i+1] = b'-';
-                    b[i+2] = b'o';
-                    count = if let Some(n) = self.memo.get(&b) {
-                        n
-                    } else {
-                        let c = min(count,self.boards(&b));
-                        self.memo.insert(&b[..].copy(),c);
-                        c
-                    }
-                    count = min(count,self.boards(b));
-                    b[i] = b'o';
-                    b[i+1] = b'o';
-                    b[i+2] = b'-';
-                }
-                (b'-',b'o',b'o') => {
-                    b[i] = b'o';
-                    b[i+1] = b'-';
-                    b[i+2] = b'-';
-                    count = min(count,self.boards(b));
-                    b[i] = b'-';
-                    b[i+1] = b'o';
-                    b[i+2] = b'o';
-                }
-                _ => continue
-            }
-        }
-        count
-    }
-}
-
 #[allow(non_snake_case)]
 fn solve(
     mut scan: Scanner,
     mut out: BufWriter<Stdout>
 ) -> Result<(), StopCode> {
-    let n = scan.next::<u8>()?;
-    let stdin = stdin();
-    let mut stdin = stdin.lock();
-    let mut board = Vec::with_capacity(12);
-    let mut dp = DP::new();
-    for _ in 0..n {
-        stdin.read_until(b'\n',&mut board)?;
-        board.pop();
-        writeln!(
-            out,
-            "{}",
-            dp.boards(&mut board)
-            )?;
-        board.clear();
+    let (r,n) = scan.take_tuple::<u8,u8>()?;
+    let mut full = [false;100];
+    if r==n {
+        writeln!(out,"too late")?;
+    } else {
+        for _ in 0..n {
+            let i = scan.next::<u8>()?;
+            full[i as usize-1] = true;
+        }
+        writeln!(out,"{}",full.iter().position(|&r| r==false).unwrap()+1)?;
     }
     Ok(out.flush()?)
 }
@@ -173,3 +120,4 @@ fn main() -> Result<(), StopCode> {
     let out = BufWriter::new(stdout());
     solve(scan,out)
 }
+
