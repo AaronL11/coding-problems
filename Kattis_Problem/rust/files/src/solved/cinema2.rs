@@ -101,38 +101,22 @@ fn solve(
     mut scan: Scanner,
     mut out: BufWriter<Stdout>
 ) -> Result<(), StopCode> {
-    use std::collections::BinaryHeap;
-    let mut ask = BinaryHeap::with_capacity(1_000);
-    let mut bid = BinaryHeap::with_capacity(1_000);
-    let mut order = String::new();
-    for _ in 0..scan.next::<u8>()? {
-        for _ in 0..scan.next::<u16>()? {
-            order.push_str(scan.get_str()?);
-            let shares = scan.next::<u16>()?;
-            scan.get_str()?;
-            scan.get_str()?;
-            let price = scan.next::<i16>()?;
-            match &order[..] {
-                "sell" => ask.push((-price,shares)),
-                "buy" => bid.push((price,shares)),
-                _ => unreachable!()
-            }
-            order.clear();
-            if let Some((a,_)) = ask.peek() {
-                write!(out,"{}",-a)?;
-            } else {
-                write!(out,"-")?;
-            }
-            if let Some((b,_)) = bid.peek() {
-                write!(out," {}",b)?;
-            } else {
-                write!(out," -")?;
-            }
-            writeln!(out," -")?;
-        }
-        ask.clear();
-        bid.clear();
-    }
+    let (N,M) = scan.take_tuple::<u16,usize>()?;
+    let groups = scan.take::<u16>(M)?;
+    let tot = groups.iter()
+                    .scan(
+                        0u16,
+                        |sum,g| {
+                            if *sum + *g > N {
+                                None
+                            } else {
+                                *sum += *g;
+                                Some(*sum)
+                            }
+                        }
+                        )
+                    .count();
+    writeln!(out,"{}",groups.len()-tot)?;
     Ok(out.flush()?)
 }
 
@@ -141,3 +125,4 @@ fn main() -> Result<(), StopCode> {
     let out = BufWriter::new(stdout());
     solve(scan,out)
 }
+

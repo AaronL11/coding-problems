@@ -101,37 +101,39 @@ fn solve(
     mut scan: Scanner,
     mut out: BufWriter<Stdout>
 ) -> Result<(), StopCode> {
-    use std::collections::BinaryHeap;
-    let mut ask = BinaryHeap::with_capacity(1_000);
-    let mut bid = BinaryHeap::with_capacity(1_000);
-    let mut order = String::new();
-    for _ in 0..scan.next::<u8>()? {
-        for _ in 0..scan.next::<u16>()? {
-            order.push_str(scan.get_str()?);
-            let shares = scan.next::<u16>()?;
-            scan.get_str()?;
-            scan.get_str()?;
-            let price = scan.next::<i16>()?;
-            match &order[..] {
-                "sell" => ask.push((-price,shares)),
-                "buy" => bid.push((price,shares)),
-                _ => unreachable!()
+    let mut dp = [false;2000];
+    for _ in 0..scan.next::<usize>()? {
+        let x = scan.next::<usize>()?;
+        for j in (0..2000).rev() {
+            if dp[j] && j+x < 2000 {
+                dp[j+x] = true;
             }
-            order.clear();
-            if let Some((a,_)) = ask.peek() {
-                write!(out,"{}",-a)?;
-            } else {
-                write!(out,"-")?;
-            }
-            if let Some((b,_)) = bid.peek() {
-                write!(out," {}",b)?;
-            } else {
-                write!(out," -")?;
-            }
-            writeln!(out," -")?;
         }
-        ask.clear();
-        bid.clear();
+        dp[x] = true;
+    }
+    if dp[1000] {
+        writeln!(out,"1000")?;
+    } else {
+        let l = if let Some(l) = (1000..2000).find(|&i| dp[i]) {
+            l
+        } else {
+            2001
+        };
+        let s = if let Some(s) = (0..1000).rev()
+                                        .find(|&i| dp[i]) {
+                                            s
+        } else {
+            0
+        };
+        writeln!(
+            out,
+            "{}",
+            if l-1000 > 1000-s {
+                s
+            } else {
+                l
+            }
+            )?;
     }
     Ok(out.flush()?)
 }
@@ -141,3 +143,4 @@ fn main() -> Result<(), StopCode> {
     let out = BufWriter::new(stdout());
     solve(scan,out)
 }
+

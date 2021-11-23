@@ -101,37 +101,46 @@ fn solve(
     mut scan: Scanner,
     mut out: BufWriter<Stdout>
 ) -> Result<(), StopCode> {
-    use std::collections::BinaryHeap;
-    let mut ask = BinaryHeap::with_capacity(1_000);
-    let mut bid = BinaryHeap::with_capacity(1_000);
-    let mut order = String::new();
-    for _ in 0..scan.next::<u8>()? {
-        for _ in 0..scan.next::<u16>()? {
-            order.push_str(scan.get_str()?);
-            let shares = scan.next::<u16>()?;
-            scan.get_str()?;
-            scan.get_str()?;
-            let price = scan.next::<i16>()?;
-            match &order[..] {
-                "sell" => ask.push((-price,shares)),
-                "buy" => bid.push((price,shares)),
-                _ => unreachable!()
-            }
-            order.clear();
-            if let Some((a,_)) = ask.peek() {
-                write!(out,"{}",-a)?;
-            } else {
-                write!(out,"-")?;
-            }
-            if let Some((b,_)) = bid.peek() {
-                write!(out," {}",b)?;
-            } else {
-                write!(out," -")?;
-            }
-            writeln!(out," -")?;
+    use std::collections::{HashMap};
+    let (N,M) = scan.take_tuple::<Int,Int>()?;
+    let mut cnx: HashMap<Int,Vec<Int>> = HashMap::with_capacity(N);
+    let mut covered = vec![false;N+1];
+    covered[1] = true;
+    for _ in 0..M {
+        let (a,b) = scan.take_tuple::<Int,Int>()?;
+        if let Some(v) = cnx.get_mut(&a) {
+            v.push(b);
+        } else {
+            cnx.insert(a,vec![b]);
         }
-        ask.clear();
-        bid.clear();
+        if let Some(v) = cnx.get_mut(&b) {
+            v.push(a);
+        } else {
+            cnx.insert(b,vec![a]);
+        }
+    }
+    if let Some(v) = cnx.get(&1) {
+        let mut stack = Vec::with_capacity(N);
+        stack.extend_from_slice(&v);
+        loop {
+            if let Some(n) = stack.pop() {
+                if covered[n] { continue }
+                covered[n] = true;
+                if let Some(v) = cnx.get(&n) {
+                    stack.extend(v.iter().filter(|&i| !covered[*i]));
+                }
+            } else {
+                break
+            }
+        }
+    }
+    let mut good = true;
+    for i in (1..=N).filter(|&i| !covered[i]) {
+        writeln!(out,"{}",i)?;
+        good = false;
+    }
+    if good {
+        writeln!(out,"Connected")?;
     }
     Ok(out.flush()?)
 }
@@ -141,3 +150,4 @@ fn main() -> Result<(), StopCode> {
     let out = BufWriter::new(stdout());
     solve(scan,out)
 }
+

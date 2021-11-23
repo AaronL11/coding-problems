@@ -96,42 +96,91 @@ impl Scanner {
     }
 }
 
+struct Player{
+    rank: u8,
+    stars: u8,
+    streak: u8
+}
+
+impl Player {
+    fn new() -> Self {
+        Self { rank:25, stars:0, streak:0 }
+    }
+    fn add_win(&mut self) {
+        let rank = self.rank;
+        match rank {
+            0 => {}
+            1..=10 => self.update_rank_win(5),
+            11..=15 => self.update_rank_win(4),
+            16..=20 => self.update_rank_win(3),
+            21..=25 => self.update_rank_win(2),
+            _ => unimplemented!()
+        }
+    }
+    fn add_loss(&mut self) {
+        let (rank,stars) = (self.rank,self.stars);
+        match rank {
+            0 => {}
+            1..=10 => self.update_rank_loss(5),
+            11..=15 => self.update_rank_loss(4),
+            16..=20 => {
+                self.streak = 0;
+                if stars == 0 {
+                    if rank < 20 {
+                        self.rank += 1;
+                        self.stars = 2;
+                    }
+                } else {
+                    self.stars -= 1;
+                }
+            }
+            21..=25 => self.streak = 0,
+            _ => unimplemented!()
+        }
+    }
+    fn update_rank_win(&mut self, n: u8) {
+        if self.rank >= 6 {
+            self.streak += 1;
+        } else {
+            self.streak = 0;
+        }
+        self.stars += if self.streak >= 3 { 2 } else { 1 };
+        if self.stars > n {
+            self.rank -= 1;
+            self.stars -= n;
+        }
+    }
+    fn update_rank_loss(&mut self, s: u8) {
+        self.streak = 0;
+        if self.stars == 0 {
+            self.rank += 1;
+            self.stars = s-1;
+        } else {
+            self.stars -= 1;
+        }
+    }
+}
+
 #[allow(non_snake_case)]
 fn solve(
     mut scan: Scanner,
     mut out: BufWriter<Stdout>
 ) -> Result<(), StopCode> {
-    use std::collections::BinaryHeap;
-    let mut ask = BinaryHeap::with_capacity(1_000);
-    let mut bid = BinaryHeap::with_capacity(1_000);
-    let mut order = String::new();
-    for _ in 0..scan.next::<u8>()? {
-        for _ in 0..scan.next::<u16>()? {
-            order.push_str(scan.get_str()?);
-            let shares = scan.next::<u16>()?;
-            scan.get_str()?;
-            scan.get_str()?;
-            let price = scan.next::<i16>()?;
-            match &order[..] {
-                "sell" => ask.push((-price,shares)),
-                "buy" => bid.push((price,shares)),
-                _ => unreachable!()
-            }
-            order.clear();
-            if let Some((a,_)) = ask.peek() {
-                write!(out,"{}",-a)?;
-            } else {
-                write!(out,"-")?;
-            }
-            if let Some((b,_)) = bid.peek() {
-                write!(out," {}",b)?;
-            } else {
-                write!(out," -")?;
-            }
-            writeln!(out," -")?;
+    let mut player = Player::new();
+    for c in scan.get_str()?.bytes() {
+        match c {
+            b'W' => player.add_win(),
+            b'L' => player.add_loss(),
+            _ => unimplemented!()
         }
-        ask.clear();
-        bid.clear();
+        if player.rank == 0 { break }
+    }
+    dbg!((player.rank,player.stars));
+    let rank = player.rank;
+    if rank == 0 {
+        writeln!(out,"Legend")?;
+    } else {
+        writeln!(out,"{}",rank)?;
     }
     Ok(out.flush()?)
 }
@@ -141,3 +190,4 @@ fn main() -> Result<(), StopCode> {
     let out = BufWriter::new(stdout());
     solve(scan,out)
 }
+

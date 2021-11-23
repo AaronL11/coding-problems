@@ -3,6 +3,11 @@ use std::io;
 use io::{stdin,Stdin,BufRead,stdout,Stdout,BufWriter,Write};
 use std::fmt::{Display,Formatter};
 
+type Int = usize;
+#[allow(dead_code)]
+const MOD: Int = 1_000_000_007;
+
+
 #[derive(Debug,Default)]
 struct StopCode;
 
@@ -91,34 +96,18 @@ impl Scanner {
     }
 }
 
-fn print_recursive(
-    out: &mut BufWriter<Stdout>,
-    c: &Vec<Vec<usize>>,
-    w: &Vec<String>,
-    idx: usize
-) -> Result<(),StopCode> {
-    write!(out,"{}",w[idx])?;
-    for i in &c[idx] {
-        print_recursive(out,c,w,*i)?;
-    }
-    Ok(())
-}
-
 #[allow(non_snake_case)]
 fn solve(
     mut scan: Scanner,
     mut out: BufWriter<Stdout>
 ) -> Result<(), StopCode> {
-    let N = scan.next::<usize>()?;
-    let words = scan.take::<String>(N)?;
-    let mut commands: Vec<Vec<usize>> = vec![vec![];N];
-    let mut last = 0;
-    for _ in 1..N {
-        let (a,b) = scan.take_tuple::<usize,usize>()?;
-        commands[a-1].push(b-1);
-        last = a-1;
-    }
-    print_recursive(&mut out, &commands, &words, last)?;
+    let mut bytes = (0..scan.next::<u32>()?)
+                .map(|_| scan.next::<u8>().unwrap())
+                .map(
+                    |byte| (0..=255u8).find(|b| b^(b<<1)==byte).unwrap()
+                    );
+    write!(out,"{}",bytes.next().unwrap())?;
+    bytes.for_each(|byte| write!(out," {}",byte).unwrap());
     Ok(out.flush()?)
 }
 
@@ -127,5 +116,4 @@ fn main() -> Result<(), StopCode> {
     let out = BufWriter::new(stdout());
     solve(scan,out)
 }
-
 

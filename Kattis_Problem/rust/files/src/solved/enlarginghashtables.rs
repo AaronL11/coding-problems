@@ -96,42 +96,60 @@ impl Scanner {
     }
 }
 
+#[allow(dead_code)]
+fn prime_sieve(n: usize) -> Vec<usize> {
+    assert!(n>=2);
+    let mut primes = vec![1;n];
+    (2..n).for_each(|i| {
+        if primes[i]==1 {
+            (i*i..n).step_by(i)
+                    .for_each(|j| primes[j]=0)
+        }
+    });
+    (2..n).filter(|&i| primes[i]==1)
+        .collect::<Vec<_>>()
+}
+
+
+fn is_prime(n: usize) -> bool {
+    match n {
+        0..=3 => true,
+        _ => {
+            if let Some(_) = (2..(n as f64).sqrt().round() as usize+1)
+                                .find(|&i|n%i==0) {
+                false
+            } else {
+                true
+            }
+        }
+    }
+}
+
 #[allow(non_snake_case)]
 fn solve(
     mut scan: Scanner,
     mut out: BufWriter<Stdout>
 ) -> Result<(), StopCode> {
-    use std::collections::BinaryHeap;
-    let mut ask = BinaryHeap::with_capacity(1_000);
-    let mut bid = BinaryHeap::with_capacity(1_000);
-    let mut order = String::new();
-    for _ in 0..scan.next::<u8>()? {
-        for _ in 0..scan.next::<u16>()? {
-            order.push_str(scan.get_str()?);
-            let shares = scan.next::<u16>()?;
-            scan.get_str()?;
-            scan.get_str()?;
-            let price = scan.next::<i16>()?;
-            match &order[..] {
-                "sell" => ask.push((-price,shares)),
-                "buy" => bid.push((price,shares)),
-                _ => unreachable!()
-            }
-            order.clear();
-            if let Some((a,_)) = ask.peek() {
-                write!(out,"{}",-a)?;
-            } else {
-                write!(out,"-")?;
-            }
-            if let Some((b,_)) = bid.peek() {
-                write!(out," {}",b)?;
-            } else {
-                write!(out," -")?;
-            }
-            writeln!(out," -")?;
+    loop {
+        let n = scan.next::<usize>()?;
+        if n == 0 {
+            break
         }
-        ask.clear();
-        bid.clear();
+        let near = (2*n+1..).find(|&i| is_prime(i)).unwrap();
+        if is_prime(n) {
+            writeln!(
+                out,
+                "{0}",
+                near
+                )?;
+        } else {
+            writeln!(
+                out,
+                "{} ({} is not prime)",
+                near,
+                n
+                )?;
+        }
     }
     Ok(out.flush()?)
 }
@@ -141,3 +159,4 @@ fn main() -> Result<(), StopCode> {
     let out = BufWriter::new(stdout());
     solve(scan,out)
 }
+

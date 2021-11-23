@@ -1,5 +1,9 @@
 main :: IO ()
 main = interact
 	$ show
-	. (\n -> (ceiling . logBase 2 $ n) + 1)
-	. read
+	. fst
+	. foldl (\(c,t) n -> if n > t then (c+1,n) else (c,n))
+		((0,0))
+	. map read
+	. tail
+	. words

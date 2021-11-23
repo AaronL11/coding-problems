@@ -101,38 +101,52 @@ fn solve(
     mut scan: Scanner,
     mut out: BufWriter<Stdout>
 ) -> Result<(), StopCode> {
-    use std::collections::BinaryHeap;
-    let mut ask = BinaryHeap::with_capacity(1_000);
-    let mut bid = BinaryHeap::with_capacity(1_000);
-    let mut order = String::new();
-    for _ in 0..scan.next::<u8>()? {
-        for _ in 0..scan.next::<u16>()? {
-            order.push_str(scan.get_str()?);
-            let shares = scan.next::<u16>()?;
-            scan.get_str()?;
-            scan.get_str()?;
-            let price = scan.next::<i16>()?;
-            match &order[..] {
-                "sell" => ask.push((-price,shares)),
-                "buy" => bid.push((price,shares)),
-                _ => unreachable!()
-            }
-            order.clear();
-            if let Some((a,_)) = ask.peek() {
-                write!(out,"{}",-a)?;
-            } else {
-                write!(out,"-")?;
-            }
-            if let Some((b,_)) = bid.peek() {
-                write!(out," {}",b)?;
-            } else {
-                write!(out," -")?;
-            }
-            writeln!(out," -")?;
-        }
-        ask.clear();
-        bid.clear();
+    const FACS: [u32;21] = [
+        3,5,8,12,20,34,
+        57,98,170,300,
+        536,966,1754,
+        3210,5910,10_944,
+        20_366,38_064,
+        71_421,134_480,
+        254_016
+    ];
+    loop {
+        let y = scan.next::<usize>()?;
+        if y == 0 { break }
+        writeln!(out,"{}",FACS[(y-1960)/10])?;
     }
+    /*
+    Pre-calculating highest values to put in array
+
+    let fac = |n| (1..n).map(|i| i as f64)
+                        .map(|i| i.log2())
+                        .sum::<f64>()
+                        .ceil() as u32;
+    let facs = (1..300_000).map(|n| n as f64)
+                            .scan(
+                            0.0,
+                            |bits,n| {
+                                *bits += n.log2();
+                                Some(*bits)
+                            }
+                            )
+                            .enumerate()
+                            .map(|(i,n)| (i+1,n.ceil() as u32))
+                            .collect::<Vec<_>>();
+    dbg!(&facs[..100]);
+    let large = (0..21).map(
+                        |i| (
+                            i,
+                            facs.iter()
+                                .filter(|(_,n)| *n <= 2u32.pow(2+i))
+                                .last()
+                                .unwrap()
+                                .0
+                            )
+                        )
+                        .collect::<Vec<_>>();
+    dbg!(&large);
+    */
     Ok(out.flush()?)
 }
 
@@ -141,3 +155,4 @@ fn main() -> Result<(), StopCode> {
     let out = BufWriter::new(stdout());
     solve(scan,out)
 }
+

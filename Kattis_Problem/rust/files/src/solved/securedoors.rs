@@ -101,37 +101,30 @@ fn solve(
     mut scan: Scanner,
     mut out: BufWriter<Stdout>
 ) -> Result<(), StopCode> {
-    use std::collections::BinaryHeap;
-    let mut ask = BinaryHeap::with_capacity(1_000);
-    let mut bid = BinaryHeap::with_capacity(1_000);
-    let mut order = String::new();
-    for _ in 0..scan.next::<u8>()? {
-        for _ in 0..scan.next::<u16>()? {
-            order.push_str(scan.get_str()?);
-            let shares = scan.next::<u16>()?;
-            scan.get_str()?;
-            scan.get_str()?;
-            let price = scan.next::<i16>()?;
-            match &order[..] {
-                "sell" => ask.push((-price,shares)),
-                "buy" => bid.push((price,shares)),
-                _ => unreachable!()
+    use std::collections::HashSet;
+    let n = scan.next::<u16>()?;
+    let mut set = HashSet::with_capacity(1000);
+    for _ in 0..n {
+        let (c,p) = (scan.get_str()?.to_owned(),scan.get_str()?.to_owned()); 
+        match &c[..] {
+            "entry" => {
+                if set.contains(&p) {
+                    writeln!(out,"{} entered (ANOMALY)",p)?;
+                } else {
+                    writeln!(out,"{} entered",p)?;
+                    set.insert(p);
+                }
             }
-            order.clear();
-            if let Some((a,_)) = ask.peek() {
-                write!(out,"{}",-a)?;
-            } else {
-                write!(out,"-")?;
+            "exit" => {
+                if set.contains(&p) {
+                    writeln!(out,"{} exited",p)?;
+                    set.remove(&p);
+                } else {
+                    writeln!(out,"{} exited (ANOMALY)",p)?;
+                }
             }
-            if let Some((b,_)) = bid.peek() {
-                write!(out," {}",b)?;
-            } else {
-                write!(out," -")?;
-            }
-            writeln!(out," -")?;
+            _ => unreachable!()
         }
-        ask.clear();
-        bid.clear();
     }
     Ok(out.flush()?)
 }
@@ -141,3 +134,4 @@ fn main() -> Result<(), StopCode> {
     let out = BufWriter::new(stdout());
     solve(scan,out)
 }
+
