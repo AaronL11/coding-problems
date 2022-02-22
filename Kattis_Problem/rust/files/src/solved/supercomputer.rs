@@ -156,50 +156,33 @@ where
 }
 
 struct Fenwick {
-    fenwick: [Uint; 200_000],
-    gems: Vec<Uint>,
-    values: [Uint; 6],
+    array: Vec<Int>,
 }
 
 impl Fenwick {
-    fn new(gems: Vec<Uint>, values: [Uint; 6]) -> Self {
-        let mut fenwick = [0; 200_000];
-        for i in 0..gems.len() {
-            fenwick[i] = values[gems[i]];
-        }
+    fn new() -> Self {
         Self {
-            fenwick,
-            gems,
-            values,
-        }
-    }
-    fn dbg(&self, n: Uint) {
-        dbg!(&self.gems[..n], &self.values);
-    }
-    fn increment(&mut self, idx: Int, inc: Int) {
-        let mut pos = idx;
-        while pos < self.fenwick.len() as Int {
-            self.fenwick[pos as Uint] += self.values[self.gems[pos as Uint]];
-            pos += pos & (-pos);
+            array: vec![0; 1_000_001],
         }
     }
     fn get_sum(&self, idx: Int) -> Int {
         let mut i = idx;
         let mut sum = 0;
         while i > 0 {
-            sum += self.values[self.gems[i as Uint]];
+            sum += self.array[i as Uint];
             i -= i & (-i);
         }
-        sum as Int
+        sum
     }
-    fn replace(&mut self, k: Uint, p: Uint) {
-        self.gems[k] = p;
+    fn get_value(&self, i: Int) -> Int {
+        self.get_sum(i) - self.get_sum(i - 1)
     }
-    fn revalue(&mut self, p: Uint, v: Uint) {
-        self.values[p] = v;
-    }
-    fn range(&mut self, l: Int, r: Int) -> Int {
-        self.get_sum(r) - self.get_sum(l - 1)
+    fn increment(&mut self, idx: Int, inc: Int) {
+        let mut pos = idx;
+        while pos as usize <= self.array.len() {
+            self.array[pos as Uint] += inc;
+            pos += pos & (-pos);
+        }
     }
 }
 
@@ -208,32 +191,20 @@ fn solve<R>(mut scan: Scanner<R>, mut out: BufWriter<Stdout>) -> Result<(), Stop
 where
     R: Read,
 {
-    let mut values = [0; 6];
-    let (N, Q) = scan.take_tuple::<Uint, Uint>()?;
-    let mut gems = vec![0; N];
-    for i in 0..6 {
-        values[i] = scan.next::<Uint>()?;
-    }
-    for (i, byte) in scan.get_str()?.bytes().enumerate() {
-        gems[i] = byte as Uint - 49;
-    }
-    let mut fenwick = Fenwick::new(gems, values);
-    fenwick.dbg(N);
-    for _ in 0..Q {
-        let n = scan.next::<u8>()?;
-        match n {
-            1 => fenwick.replace(scan.next::<Uint>()?, scan.next::<Uint>()? - 1),
-            2 => fenwick.revalue(scan.next::<Uint>()? - 1, scan.next::<Uint>()?),
-            _ => {
-                writeln!(
-                    out,
-                    "{}",
-                    fenwick.range(scan.next::<Int>()? - 1, scan.next::<Int>()? - 1)
-                )?;
+    let (_, K) = scan.take_tuple::<Uint, Uint>()?;
+    let mut fenwick = Fenwick::new();
+    for _ in 0..K {
+        if let "F" = scan.get_str()? {
+            let idx = scan.next::<Int>()?;
+            if fenwick.get_value(idx) == 0 {
+                fenwick.increment(idx, 1);
+            } else {
+                fenwick.increment(idx, -1);
             }
+        } else {
+            let (l, r) = scan.take_tuple::<Int, Int>()?;
+            writeln!(out, "{}", fenwick.get_sum(r) - fenwick.get_sum(l - 1))?;
         }
-        dbg!(n);
-        fenwick.dbg(N);
     }
     Ok(out.flush()?)
 }

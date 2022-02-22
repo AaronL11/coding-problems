@@ -1,9 +1,18 @@
-use std::{str,error,fmt};
-use std::io;
-use io::{stdin,Stdin,BufRead,stdout,Stdout,BufWriter,Write};
-use std::fmt::{Display,Formatter};
+use std::{
+    error, fmt,
+    fmt::{Display, Formatter},
+    io,
+    io::{stdin, stdout, BufRead, BufWriter, Bytes, Read, Stdin, Stdout, Write},
+    str,
+    str::FromStr,
+};
 
-#[derive(Debug,Default)]
+type Int = isize;
+type Uint = usize;
+#[allow(dead_code)]
+const MOD: Int = 1_000_000_007;
+
+#[derive(Debug, Default)]
 struct StopCode;
 
 impl error::Error for StopCode {}
@@ -15,98 +24,157 @@ impl Display for StopCode {
 }
 
 impl From<io::Error> for StopCode {
-    fn from(_: io::Error) -> StopCode { StopCode }
+    fn from(_: io::Error) -> StopCode {
+        StopCode
+    }
 }
 
-struct Scanner {
-    scanin: Stdin,
+pub struct Scanner<R>
+where
+    R: Read,
+{
+    bytes: Bytes<R>,
     buffer: Vec<u8>,
-    iterator: str::SplitAsciiWhitespace<'static>,
+    split: str::SplitAsciiWhitespace<'static>,
 }
 
-#[allow(dead_code)]
-impl Scanner {
-    fn new() -> Self {
+#[allow(dead_code, unused_assignments)]
+impl<R> Scanner<R>
+where
+    R: Read,
+{
+    pub fn new(bytes: Bytes<R>) -> Self {
         Self {
-            scanin: stdin(),
+            bytes,
             buffer: Vec::new(),
-            iterator: "".split_ascii_whitespace()
+            split: "".split_ascii_whitespace(),
         }
     }
-    fn next<T: str::FromStr>(&mut self) -> Result<T, StopCode> {
+    pub fn next<T: FromStr>(&mut self) -> Result<T, StopCode> {
         self.get_str()?.parse::<T>().ok().ok_or(StopCode)
     }
-    fn get_str(&mut self) -> Result<&str,StopCode> {
+    pub fn get_str(&mut self) -> Result<&str, StopCode> {
         loop {
-            if let Some(input) = self.iterator.next() {
-                return Ok(input)
+            if let Some(input) = self.split.next() {
+                return Ok(input);
             }
             self.buffer.clear();
-            self.scanin.lock().read_until(b'\n',&mut self.buffer)?;
-            self.iterator = unsafe {
-                let slice = str::from_utf8_unchecked(&self.buffer);
-                std::mem::transmute(slice.split_ascii_whitespace())
-            };
+            loop {
+                match self.bytes.next().ok_or(StopCode)? {
+                    Ok(b'\n') => {
+                        self.split = unsafe {
+                            let slice = str::from_utf8_unchecked(&self.buffer);
+                            std::mem::transmute(slice.split_ascii_whitespace())
+                        };
+                        break;
+                    }
+                    Ok(byte) => self.buffer.push(byte),
+                    Err(_) => return Err(StopCode),
+                }
+            }
         }
-
     }
-    fn take<T: str::FromStr>(&mut self, n: usize) -> Result<Vec<T>,StopCode> {
-        let mut result = Vec::with_capacity(n);
-        for _ in 0..n {
-            let i = self.next::<T>()?;
-            result.push(i);
+    pub fn line(&mut self) -> Result<String, StopCode> {
+        loop {
+            match self.bytes.next().ok_or(StopCode)? {
+                Ok(b'\n') => {
+                    let result = unsafe { str::from_utf8_unchecked(&self.buffer).to_owned() };
+                    self.buffer.clear();
+                    return Ok(result);
+                }
+                Ok(byte) => self.buffer.push(byte),
+                Err(_) => return Err(StopCode),
+            }
         }
-        Ok(result)
+    }
+    pub fn lines(&mut self) -> LineIter<R> {
+        LineIter::new(self)
+    }
+    pub fn words<T: FromStr>(&mut self) -> WordsIter<T, R> {
+        WordsIter::new(self)
+    }
+    pub fn take<T: FromStr>(&mut self, n: usize) -> Vec<T> {
+        self.words::<T>().take(n).collect::<Vec<T>>()
     }
     // Only works after const generics were stabilized!!
-    //fn take<T, const N: usize>(&mut self) -> Result<[T;N],StopCode>
-    //where
-    //    T: str::FromStr + Default + Copy,
-    //    [T;N]: Default {
-    //    let mut result: [T;N] = Default::default();
-    //    for i in 0..N {
-    //        let n = self.next::<T>()?;
-    //        result[i] = n;
-    //    }
-    //   Ok(result) 
-    //}
-    fn take_tuple<T, V>(&mut self) -> Result<(T,V),StopCode>
+    pub fn take_const<T, const N: usize>(&mut self) -> [T; N]
     where
-        T: str::FromStr,
-        V: str::FromStr {
-        Ok((
-            self.next::<T>()?,
-            self.next::<V>()?
-        ))
+        T: FromStr + Default + Copy,
+        [T; N]: Default,
+    {
+        let mut result: [T; N] = Default::default();
+        result
+            .iter_mut()
+            .zip(self.words().take(N))
+            .for_each(|(x, y)| *x = y);
+        result
     }
-    fn take_tuple3<T, V, U>(&mut self) -> Result<(T,V,U),StopCode>
+    pub fn take_tuple<T, V>(&mut self) -> Result<(T, V), StopCode>
     where
-        T: str::FromStr,
-        V: str::FromStr,
-        U: str::FromStr {
-        Ok((
-            self.next::<T>()?,
-            self.next::<V>()?,
-            self.next::<U>()?
-        ))
+        T: FromStr,
+        V: FromStr,
+    {
+        Ok((self.next::<T>()?, self.next::<V>()?))
+    }
+    pub fn take_tuple3<T, V, U>(&mut self) -> Result<(T, V, U), StopCode>
+    where
+        T: FromStr,
+        V: FromStr,
+        U: FromStr,
+    {
+        Ok((self.next::<T>()?, self.next::<V>()?, self.next::<U>()?))
+    }
+}
+
+pub struct WordsIter<'a, T: FromStr, R: Read>(&'a mut Scanner<R>, std::marker::PhantomData<T>);
+
+impl<'a, T: FromStr, R: Read> WordsIter<'a, T, R> {
+    fn new(scan: &'a mut Scanner<R>) -> Self {
+        Self(scan, std::marker::PhantomData)
+    }
+}
+
+impl<'a, T, R> Iterator for WordsIter<'a, T, R>
+where
+    T: FromStr,
+    R: Read,
+{
+    type Item = T;
+    fn next(&mut self) -> Option<Self::Item> {
+        self.0.next::<T>().ok()
+    }
+}
+
+pub struct LineIter<'a, R: Read>(&'a mut Scanner<R>);
+
+impl<'a, R: Read> LineIter<'a, R> {
+    fn new(scan: &'a mut Scanner<R>) -> Self {
+        Self(scan)
+    }
+}
+
+impl<'a, R> Iterator for LineIter<'a, R>
+where
+    R: Read,
+{
+    type Item = String;
+    fn next(&mut self) -> Option<Self::Item> {
+        self.0.line().ok()
     }
 }
 
 #[allow(non_snake_case)]
-fn solve(
-    mut scan: Scanner,
-    mut out: BufWriter<Stdout>
-) -> Result<(), StopCode> {
-    // ...
+fn solve<R>(mut scan: Scanner<R>, mut out: BufWriter<Stdout>) -> Result<(), StopCode>
+where
+    R: Read,
+{
+    //
     Ok(out.flush()?)
 }
 
 fn main() -> Result<(), StopCode> {
-    let scan = Scanner::new();
+    let scan = Scanner::new(stdin().bytes());
     let out = BufWriter::new(stdout());
-    solve(scan,out)
+    solve(scan, out)
 }
-
-
-
 

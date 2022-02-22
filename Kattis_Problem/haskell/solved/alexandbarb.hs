@@ -5,3 +5,4 @@ main = interact
                          else "Barb")
         . map read
         . words
+

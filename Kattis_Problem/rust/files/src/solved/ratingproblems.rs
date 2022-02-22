@@ -155,86 +155,24 @@ where
     }
 }
 
-struct Fenwick {
-    fenwick: [Uint; 200_000],
-    gems: Vec<Uint>,
-    values: [Uint; 6],
-}
-
-impl Fenwick {
-    fn new(gems: Vec<Uint>, values: [Uint; 6]) -> Self {
-        let mut fenwick = [0; 200_000];
-        for i in 0..gems.len() {
-            fenwick[i] = values[gems[i]];
-        }
-        Self {
-            fenwick,
-            gems,
-            values,
-        }
-    }
-    fn dbg(&self, n: Uint) {
-        dbg!(&self.gems[..n], &self.values);
-    }
-    fn increment(&mut self, idx: Int, inc: Int) {
-        let mut pos = idx;
-        while pos < self.fenwick.len() as Int {
-            self.fenwick[pos as Uint] += self.values[self.gems[pos as Uint]];
-            pos += pos & (-pos);
-        }
-    }
-    fn get_sum(&self, idx: Int) -> Int {
-        let mut i = idx;
-        let mut sum = 0;
-        while i > 0 {
-            sum += self.values[self.gems[i as Uint]];
-            i -= i & (-i);
-        }
-        sum as Int
-    }
-    fn replace(&mut self, k: Uint, p: Uint) {
-        self.gems[k] = p;
-    }
-    fn revalue(&mut self, p: Uint, v: Uint) {
-        self.values[p] = v;
-    }
-    fn range(&mut self, l: Int, r: Int) -> Int {
-        self.get_sum(r) - self.get_sum(l - 1)
-    }
-}
-
 #[allow(non_snake_case)]
 fn solve<R>(mut scan: Scanner<R>, mut out: BufWriter<Stdout>) -> Result<(), StopCode>
 where
     R: Read,
 {
-    let mut values = [0; 6];
-    let (N, Q) = scan.take_tuple::<Uint, Uint>()?;
-    let mut gems = vec![0; N];
-    for i in 0..6 {
-        values[i] = scan.next::<Uint>()?;
+    let (n, k) = scan.take_tuple::<u8, u8>()?;
+    let mut sum = 0;
+    for _ in 0..k {
+        sum += scan.next::<i8>()?;
     }
-    for (i, byte) in scan.get_str()?.bytes().enumerate() {
-        gems[i] = byte as Uint - 49;
-    }
-    let mut fenwick = Fenwick::new(gems, values);
-    fenwick.dbg(N);
-    for _ in 0..Q {
-        let n = scan.next::<u8>()?;
-        match n {
-            1 => fenwick.replace(scan.next::<Uint>()?, scan.next::<Uint>()? - 1),
-            2 => fenwick.revalue(scan.next::<Uint>()? - 1, scan.next::<Uint>()?),
-            _ => {
-                writeln!(
-                    out,
-                    "{}",
-                    fenwick.range(scan.next::<Int>()? - 1, scan.next::<Int>()? - 1)
-                )?;
-            }
-        }
-        dbg!(n);
-        fenwick.dbg(N);
-    }
+    let r = (n - k) as i8;
+    let (min, max) = (-3 * r, 3 * r);
+    writeln!(
+        out,
+        "{} {}",
+        (sum + min) as f64 / n as f64,
+        (sum + max) as f64 / n as f64
+    )?;
     Ok(out.flush()?)
 }
 

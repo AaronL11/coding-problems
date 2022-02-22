@@ -2,7 +2,7 @@
 #[allow(unused_imports)]
 use std::{
     cmp,
-    collections::{BTreeMap, BTreeSet, BinaryHeap, HashMap, HashSet, VecDeque},
+    collections::{BTreeMap, BTreeSet, HashMap, HashSet, VecDeque},
     error, fmt,
     fmt::{Display, Formatter},
     io,
@@ -14,7 +14,6 @@ use std::{
 type Int = isize;
 type Uint = usize;
 const MOD: Uint = 1_000_000_007;
-// const INF: Int = isize::MAX;
 
 #[derive(Debug, Default)]
 struct StopCode;
@@ -155,86 +154,72 @@ where
     }
 }
 
-struct Fenwick {
-    fenwick: [Uint; 200_000],
-    gems: Vec<Uint>,
-    values: [Uint; 6],
-}
-
-impl Fenwick {
-    fn new(gems: Vec<Uint>, values: [Uint; 6]) -> Self {
-        let mut fenwick = [0; 200_000];
-        for i in 0..gems.len() {
-            fenwick[i] = values[gems[i]];
-        }
-        Self {
-            fenwick,
-            gems,
-            values,
-        }
-    }
-    fn dbg(&self, n: Uint) {
-        dbg!(&self.gems[..n], &self.values);
-    }
-    fn increment(&mut self, idx: Int, inc: Int) {
-        let mut pos = idx;
-        while pos < self.fenwick.len() as Int {
-            self.fenwick[pos as Uint] += self.values[self.gems[pos as Uint]];
-            pos += pos & (-pos);
-        }
-    }
-    fn get_sum(&self, idx: Int) -> Int {
-        let mut i = idx;
-        let mut sum = 0;
-        while i > 0 {
-            sum += self.values[self.gems[i as Uint]];
-            i -= i & (-i);
-        }
-        sum as Int
-    }
-    fn replace(&mut self, k: Uint, p: Uint) {
-        self.gems[k] = p;
-    }
-    fn revalue(&mut self, p: Uint, v: Uint) {
-        self.values[p] = v;
-    }
-    fn range(&mut self, l: Int, r: Int) -> Int {
-        self.get_sum(r) - self.get_sum(l - 1)
-    }
-}
-
 #[allow(non_snake_case)]
 fn solve<R>(mut scan: Scanner<R>, mut out: BufWriter<Stdout>) -> Result<(), StopCode>
 where
     R: Read,
 {
-    let mut values = [0; 6];
-    let (N, Q) = scan.take_tuple::<Uint, Uint>()?;
-    let mut gems = vec![0; N];
-    for i in 0..6 {
-        values[i] = scan.next::<Uint>()?;
+    let mut queue = VecDeque::with_capacity(500);
+    let mut grid = [[(0, false); 501]; 501];
+    let (n, m) = scan.take_tuple::<Uint, Uint>()?;
+    let go = |dd, x, b| {
+        (
+            if x >= dd { Some(x - dd) } else { None },
+            if x + dd < b { Some(x + dd) } else { None },
+        )
+    };
+    for i in 0..n {
+        for (j, byte) in scan.get_str()?.bytes().enumerate() {
+            grid[i][j] = ((byte - 48) as usize, false);
+        }
     }
-    for (i, byte) in scan.get_str()?.bytes().enumerate() {
-        gems[i] = byte as Uint - 49;
-    }
-    let mut fenwick = Fenwick::new(gems, values);
-    fenwick.dbg(N);
-    for _ in 0..Q {
-        let n = scan.next::<u8>()?;
-        match n {
-            1 => fenwick.replace(scan.next::<Uint>()?, scan.next::<Uint>()? - 1),
-            2 => fenwick.revalue(scan.next::<Uint>()? - 1, scan.next::<Uint>()?),
-            _ => {
-                writeln!(
-                    out,
-                    "{}",
-                    fenwick.range(scan.next::<Int>()? - 1, scan.next::<Int>()? - 1)
-                )?;
+    let mut distance = 0;
+    let mut min = 1_000_000_007;
+    queue.push_back((0, 0, distance));
+    while let Some((r, c, d)) = queue.pop_front() {
+        distance = d;
+        let (dd, visited) = grid[r][c];
+        if visited {
+            continue;
+        } else {
+            grid[r][c] = (dd, true);
+        }
+        if (r, c) == (n - 1, m - 1) {
+            min = cmp::min(min, distance);
+            continue;
+        }
+        let (l, rt) = go(dd, c, m);
+        if let Some(x) = l {
+            if !grid[r][x].1 {
+                queue.push_back((r, x, distance + 1));
             }
         }
-        dbg!(n);
-        fenwick.dbg(N);
+        if let Some(x) = rt {
+            if !grid[r][x].1 {
+                queue.push_back((r, x, distance + 1));
+            }
+        }
+        let (u, d) = go(dd, r, n);
+        if let Some(x) = u {
+            if !grid[x][c].1 {
+                queue.push_back((x, c, distance + 1));
+            }
+        }
+        if let Some(x) = d {
+            if !grid[x][c].1 {
+                queue.push_back((x, c, distance + 1));
+            }
+        }
     }
+    writeln!(
+        out,
+        "{}",
+        if min == 1_000_000_007 {
+            -1
+        } else {
+            min as isize
+        }
+    )?;
     Ok(out.flush()?)
 }
 

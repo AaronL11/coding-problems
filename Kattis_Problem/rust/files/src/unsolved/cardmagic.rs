@@ -1,8 +1,7 @@
 #![allow(dead_code)]
 #[allow(unused_imports)]
 use std::{
-    cmp,
-    collections::{BTreeMap, BTreeSet, BinaryHeap, HashMap, HashSet, VecDeque},
+    collections::{BTreeMap, BTreeSet, HashMap, HashSet},
     error, fmt,
     fmt::{Display, Formatter},
     io,
@@ -13,8 +12,7 @@ use std::{
 
 type Int = isize;
 type Uint = usize;
-const MOD: Uint = 1_000_000_007;
-// const INF: Int = isize::MAX;
+const MOD: Uint = 1_000_000_009;
 
 #[derive(Debug, Default)]
 struct StopCode;
@@ -155,86 +153,27 @@ where
     }
 }
 
-struct Fenwick {
-    fenwick: [Uint; 200_000],
-    gems: Vec<Uint>,
-    values: [Uint; 6],
-}
-
-impl Fenwick {
-    fn new(gems: Vec<Uint>, values: [Uint; 6]) -> Self {
-        let mut fenwick = [0; 200_000];
-        for i in 0..gems.len() {
-            fenwick[i] = values[gems[i]];
-        }
-        Self {
-            fenwick,
-            gems,
-            values,
-        }
-    }
-    fn dbg(&self, n: Uint) {
-        dbg!(&self.gems[..n], &self.values);
-    }
-    fn increment(&mut self, idx: Int, inc: Int) {
-        let mut pos = idx;
-        while pos < self.fenwick.len() as Int {
-            self.fenwick[pos as Uint] += self.values[self.gems[pos as Uint]];
-            pos += pos & (-pos);
-        }
-    }
-    fn get_sum(&self, idx: Int) -> Int {
-        let mut i = idx;
-        let mut sum = 0;
-        while i > 0 {
-            sum += self.values[self.gems[i as Uint]];
-            i -= i & (-i);
-        }
-        sum as Int
-    }
-    fn replace(&mut self, k: Uint, p: Uint) {
-        self.gems[k] = p;
-    }
-    fn revalue(&mut self, p: Uint, v: Uint) {
-        self.values[p] = v;
-    }
-    fn range(&mut self, l: Int, r: Int) -> Int {
-        self.get_sum(r) - self.get_sum(l - 1)
-    }
-}
-
 #[allow(non_snake_case)]
 fn solve<R>(mut scan: Scanner<R>, mut out: BufWriter<Stdout>) -> Result<(), StopCode>
 where
     R: Read,
 {
-    let mut values = [0; 6];
-    let (N, Q) = scan.take_tuple::<Uint, Uint>()?;
-    let mut gems = vec![0; N];
-    for i in 0..6 {
-        values[i] = scan.next::<Uint>()?;
-    }
-    for (i, byte) in scan.get_str()?.bytes().enumerate() {
-        gems[i] = byte as Uint - 49;
-    }
-    let mut fenwick = Fenwick::new(gems, values);
-    fenwick.dbg(N);
-    for _ in 0..Q {
-        let n = scan.next::<u8>()?;
-        match n {
-            1 => fenwick.replace(scan.next::<Uint>()?, scan.next::<Uint>()? - 1),
-            2 => fenwick.revalue(scan.next::<Uint>()? - 1, scan.next::<Uint>()?),
-            _ => {
-                writeln!(
-                    out,
-                    "{}",
-                    fenwick.range(scan.next::<Int>()? - 1, scan.next::<Int>()? - 1)
-                )?;
+    let (N, K, T) = scan.take_tuple3::<usize, usize, usize>()?;
+    let mut counts = [0; 5_001];
+    counts[0] = 1;
+    for i in 1..=N {
+        let mut j = std::cmp::min(i * K, T);
+        loop {
+            if j + 1 == 1 {
+                break;
+            };
+            j -= 1;
+            for k in 1..std::cmp::min(K, j) {
+                counts[j] = (counts[j] + counts[j - k]) % MOD;
             }
         }
-        dbg!(n);
-        fenwick.dbg(N);
     }
+    writeln!(out, "{}", counts[T])?;
     Ok(out.flush()?)
 }
 

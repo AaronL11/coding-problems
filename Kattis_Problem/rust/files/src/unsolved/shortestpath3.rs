@@ -14,7 +14,7 @@ use std::{
 type Int = isize;
 type Uint = usize;
 const MOD: Uint = 1_000_000_007;
-// const INF: Int = isize::MAX;
+const INF: Int = isize::MAX;
 
 #[derive(Debug, Default)]
 struct StopCode;
@@ -155,91 +155,85 @@ where
     }
 }
 
-struct Fenwick {
-    fenwick: [Uint; 200_000],
-    gems: Vec<Uint>,
-    values: [Uint; 6],
-}
-
-impl Fenwick {
-    fn new(gems: Vec<Uint>, values: [Uint; 6]) -> Self {
-        let mut fenwick = [0; 200_000];
-        for i in 0..gems.len() {
-            fenwick[i] = values[gems[i]];
-        }
-        Self {
-            fenwick,
-            gems,
-            values,
-        }
-    }
-    fn dbg(&self, n: Uint) {
-        dbg!(&self.gems[..n], &self.values);
-    }
-    fn increment(&mut self, idx: Int, inc: Int) {
-        let mut pos = idx;
-        while pos < self.fenwick.len() as Int {
-            self.fenwick[pos as Uint] += self.values[self.gems[pos as Uint]];
-            pos += pos & (-pos);
-        }
-    }
-    fn get_sum(&self, idx: Int) -> Int {
-        let mut i = idx;
-        let mut sum = 0;
-        while i > 0 {
-            sum += self.values[self.gems[i as Uint]];
-            i -= i & (-i);
-        }
-        sum as Int
-    }
-    fn replace(&mut self, k: Uint, p: Uint) {
-        self.gems[k] = p;
-    }
-    fn revalue(&mut self, p: Uint, v: Uint) {
-        self.values[p] = v;
-    }
-    fn range(&mut self, l: Int, r: Int) -> Int {
-        self.get_sum(r) - self.get_sum(l - 1)
-    }
-}
-
+/*
 #[allow(non_snake_case)]
 fn solve<R>(mut scan: Scanner<R>, mut out: BufWriter<Stdout>) -> Result<(), StopCode>
 where
     R: Read,
 {
-    let mut values = [0; 6];
-    let (N, Q) = scan.take_tuple::<Uint, Uint>()?;
-    let mut gems = vec![0; N];
-    for i in 0..6 {
-        values[i] = scan.next::<Uint>()?;
-    }
-    for (i, byte) in scan.get_str()?.bytes().enumerate() {
-        gems[i] = byte as Uint - 49;
-    }
-    let mut fenwick = Fenwick::new(gems, values);
-    fenwick.dbg(N);
-    for _ in 0..Q {
-        let n = scan.next::<u8>()?;
-        match n {
-            1 => fenwick.replace(scan.next::<Uint>()?, scan.next::<Uint>()? - 1),
-            2 => fenwick.revalue(scan.next::<Uint>()? - 1, scan.next::<Uint>()?),
-            _ => {
-                writeln!(
-                    out,
-                    "{}",
-                    fenwick.range(scan.next::<Int>()? - 1, scan.next::<Int>()? - 1)
-                )?;
-            }
-        }
-        dbg!(n);
-        fenwick.dbg(N);
-    }
     Ok(out.flush()?)
 }
+*/
 
 fn main() -> Result<(), StopCode> {
-    let scan = Scanner::new(stdin().bytes());
-    let out = BufWriter::new(stdout());
-    solve(scan, out)
+    let mut scan = Scanner::new(stdin().bytes());
+    let mut out = BufWriter::new(stdout());
+    let mut graph: HashMap<Uint, Vec<(Uint, Int)>> = HashMap::new();
+    loop {
+        let ((n, m), (q, s)) = (
+            scan.take_tuple::<Uint, Uint>()?,
+            scan.take_tuple::<Uint, Uint>()?,
+        );
+        if n == 0 && m == 0 && q == 0 && s == 0 {
+            break;
+        }
+        graph.clear();
+        for _ in 0..m {
+            let (u, v, w) = scan.take_tuple3::<Uint, Uint, Int>()?;
+            if let Some(es) = graph.get_mut(&u) {
+                es.push((v, w));
+            } else {
+                graph.insert(u, vec![(v, w)]);
+            }
+        }
+        let mut visited = HashSet::new();
+        let mut queue = VecDeque::new();
+        let mut dist = vec![MOD as Int; n];
+        dist[s] = 0;
+        for _ in 1..n {
+            queue.push_back(s);
+            visited.clear();
+            while let Some(node) = queue.pop_front() {
+                if visited.contains(&node) {
+                    continue;
+                }
+                if let Some(edges) = graph.get(&node) {
+                    visited.insert(node);
+                    for (v, w) in &edges[..] {
+                        let x = dist[node] + w;
+                        if x < dist[*v] {
+                            dist[*v] = x;
+                        }
+                        queue.push_back(*v);
+                    }
+                }
+            }
+        }
+        queue.push_back(s);
+        visited.clear();
+        while let Some(node) = queue.pop_front() {
+            if visited.contains(&node) {
+                continue;
+            }
+            if let Some(edges) = graph.get(&node) {
+                visited.insert(node);
+                for (v, w) in &edges[..] {
+                    if dist[node] + w < dist[*v] {
+                        dist[*v] = -1_000_000_007;
+                    }
+                    queue.push_back(*v);
+                }
+            }
+        }
+        for _ in 0..q {
+            let x = scan.next::<Uint>()?;
+            let y = dist[x];
+            match y {
+                1_000_000_007 => writeln!(out, "Impossible")?,
+                -1_000_000_007 => writeln!(out, "-Infinity")?,
+                _ => writeln!(out, "{}", y)?,
+            }
+        }
+    }
+    Ok(out.flush()?)
 }
