@@ -148,11 +148,51 @@ impl<'a, R: Read> LineIter<'a, R> {
     }
 }
 
+impl<'a, R> Iterator for LineIter<'a, R>
+where
+    R: Read,
+{
+    type Item = String;
+    fn next(&mut self) -> Option<Self::Item> {
+        self.0.line().ok()
+    }
+}
+
+/*
+ * This is basically a caesar cipher with two parts.
+ * The first part requires us to grab the key by subtracting the two values.
+ * Then we convert each rune to an ascii character by using some byte arithmetic.
+ * Finally we perform our caesar cipher.
+ */
+
 #[allow(non_snake_case)]
 fn solve<R>(mut scan: Scanner<R>, mut out: BufWriter<Stdout>) -> Result<(), StopCode>
 where
     R: Read,
 {
+    let x = scan.get_str()?.bytes().map(|b| b - 32).sum::<u8>() % 26;
+    let n = scan.next::<char>()? as u8 - 97;
+    // let key = if x < n { (26 + n) - x } else { x - n } % 26;
+    let key = (x - n + 26) % 26;
+    scan.flush();
+    for line in scan.lines() {
+        if line == "" {
+            continue;
+        }
+        for rune in line.split(' ') {
+            match rune {
+                "0" => write!(out, " ")?,
+                "<" => write!(out, ",")?,
+                ">" => write!(out, ".")?,
+                _ => {
+                    let mut x = rune.bytes().fold(0, |acc, b| (acc + (b - 32)) % 26);
+                    x = if x <= key { (26 + x) - key } else { x - key } % 26;
+                    write!(out, "{}", (x + 97) as char)?
+                }
+            }
+        }
+        write!(out, "\n")?;
+    }
     Ok(out.flush()?)
 }
 

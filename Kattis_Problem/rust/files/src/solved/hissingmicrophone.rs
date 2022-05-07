@@ -153,6 +153,16 @@ fn solve<R>(mut scan: Scanner<R>, mut out: BufWriter<Stdout>) -> Result<(), Stop
 where
     R: Read,
 {
+    for w in scan.get_str()?.as_bytes().windows(2) {
+        match w {
+            [b's', b's'] => {
+                writeln!(out, "hiss")?;
+                return Ok(out.flush()?);
+            }
+            _ => continue,
+        }
+    }
+    writeln!(out, "no hiss")?;
     Ok(out.flush()?)
 }
 

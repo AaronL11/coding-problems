@@ -3,7 +3,9 @@
 use std::{
     cmp,
     collections::{BTreeMap, BTreeSet, BinaryHeap, HashMap, HashSet, VecDeque},
-    error, fmt,
+    error,
+    f64::consts::PI,
+    fmt,
     fmt::{Display, Formatter},
     io,
     io::{stdin, stdout, BufRead, BufWriter, Bytes, Read, Stdin, Stdout, Write},
@@ -78,9 +80,6 @@ where
             }
         }
     }
-    fn flush(&mut self) {
-        self.buffer.clear()
-    }
     fn line(&mut self) -> Result<String, StopCode> {
         loop {
             match self.bytes.next().ok_or(StopCode)? {
@@ -148,11 +147,93 @@ impl<'a, R: Read> LineIter<'a, R> {
     }
 }
 
+impl<'a, R> Iterator for LineIter<'a, R>
+where
+    R: Read,
+{
+    type Item = String;
+    fn next(&mut self) -> Option<Self::Item> {
+        self.0.line().ok()
+    }
+}
+
+const A: f64 = 1.0 / PI;
+const B: f64 = A / PI;
+const C: f64 = B / PI;
+
+fn field(q: Int, x1: Uint, x0: Uint, y1: Uint, y0: Uint) -> f64 {
+    q as f64
+        / ((x1 as f64 - x0 as f64) * (x1 as f64 - x0 as f64)
+            + (y1 as f64 - y0 as f64) * (y1 as f64 - y0 as f64))
+            .sqrt()
+}
+
+fn field_char(v: f64) -> char {
+    let va = v.abs();
+    if v > 0. {
+        if va > A {
+            '0'
+        } else if va > B {
+            'O'
+        } else if va > C {
+            'o'
+        } else {
+            '.'
+        }
+    } else if v < 0. {
+        if va > A {
+            '%'
+        } else if va > B {
+            'X'
+        } else if va > C {
+            'x'
+        } else {
+            '.'
+        }
+    } else {
+        '.'
+    }
+}
+
+/*
+ * Very simple O(nmq) solution.
+ * Simply loop over the grid, and then sum all the potentials at that point.
+ * To save space I just write directly to a buffer instead of a grid.
+ */
+
 #[allow(non_snake_case)]
 fn solve<R>(mut scan: Scanner<R>, mut out: BufWriter<Stdout>) -> Result<(), StopCode>
 where
     R: Read,
 {
+    let (n, m, q) = scan.take_tuple3::<Uint, Uint, Uint>()?;
+    let charges = (0..q)
+        .map(|_| {
+            let (x, y, c) = scan.take_tuple3::<Uint, Uint, char>().unwrap();
+            (x, y, if c == '+' { 1 } else { -1 })
+        })
+        .collect::<HashSet<_>>();
+    for y1 in 1..=m {
+        for x1 in 1..=n {
+            if charges.contains(&(x1, y1, 1)) {
+                write!(out, "+")?;
+            } else if charges.contains(&(x1, y1, -1)) {
+                write!(out, "-")?;
+            } else {
+                write!(
+                    out,
+                    "{}",
+                    field_char(
+                        charges
+                            .iter()
+                            .map(|(x0, y0, q)| field(*q, x1, *x0, y1, *y0))
+                            .sum::<f64>(),
+                    )
+                )?;
+            }
+        }
+        write!(out, "\n")?;
+    }
     Ok(out.flush()?)
 }
 

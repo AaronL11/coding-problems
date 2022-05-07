@@ -8,6 +8,7 @@ mod hopper;
 mod integerlist;
 mod jointjogjam;
 mod justforsidekicks;
+mod justforsidekicks;
 mod mateinone;
 mod maximizingwinnings;
 mod minimumscalar;
