@@ -156,64 +156,49 @@ impl<'a, R: Read> LineIter<'a, R> {
 
 // Solution Code Here
 
-/// Simple Prime Sieve
-fn primes(n: usize) -> Vec<Uint> {
-    let mut primes = vec![1; n];
-    (2..n).for_each(|i| {
-        if primes[i] == 1 {
-            (i * i..n).step_by(i).for_each(|j| primes[j] = 0)
+fn make_map(s: &str) -> HashMap<char, usize> {
+    s.chars().fold(HashMap::new(), |mut map, prev| {
+        if let Some(item) = map.get_mut(&prev) {
+            *item += 1;
+        } else {
+            map.insert(prev, 1);
         }
-    });
-    (2..n).filter(|&i| primes[i] == 1).collect::<Vec<_>>()
+        map
+    })
 }
 
-use std::cmp::min;
+fn anagram(a: &str, b: &str) -> bool {
+    make_map(a) == make_map(b)
+}
 
 #[allow(non_snake_case)]
 fn main() -> Result<(), StopCode> {
     let mut scan = Scanner::new(stdin().bytes());
     let mut out = BufWriter::new(stdout());
-    let mut S = vec![vec![0isize; 102]; 10_002];
-    let (n, w, h) = scan.take_tuple3::<Uint, Uint, Uint>()?;
-    for i in 0..=w {
-        S[0][i] = 1;
-    }
-    for j in 1..=n {
-        S[j][1] = min(S[j - 1][1] + 1, h as isize + 1);
-    }
-    for i in 1..=n {
-        for j in 2..=w {
-            let mut sum = 0;
-            for k in 0..=min(i, h) {
-                sum = (sum + S[i - k][j - 1]) % MOD as isize;
+    let multigram = scan.get_str()?;
+    let n = multigram.len();
+    if let Some((_, slice)) = (1..n - 1)
+        .filter(|num| n % num == 0)
+        .flat_map(|factor| {
+            if multigram
+                .as_bytes()
+                .chunks(factor)
+                .map(|chunk| unsafe { str::from_utf8_unchecked(chunk) })
+                .fold((true, &multigram[..factor]), |(res, prev), next| {
+                    (res && anagram(prev, next), next)
+                })
+                .0
+            {
+                Some((factor, &multigram[..factor]))
+            } else {
+                None
             }
-            S[i][j] = sum;
-        }
+        })
+        .min()
+    {
+        writeln!(out, "{}", slice)?;
+    } else {
+        writeln!(out, "-1")?;
     }
-    let mut count = 1;
-    let mut m = n;
-    let mut i = 0;
-    while i < h && m >= w {
-        m -= w;
-        count += 1;
-        i += 1;
-    }
-    write!(out, "{}", (&S[n][w] - count) % MOD as isize)?;
     Ok(out.flush()?)
 }
-
-/*
-#[allow(non_snake_case)]
-fn solve<R>(mut scan: Scanner<R>, mut out: BufWriter<Stdout>) -> Result<(), StopCode>
-where
-    R: Read,
-{
-    Ok(out.flush()?)
-}
-
-fn main() -> Result<(), StopCode> {
-    let scan = Scanner::new(stdin().bytes());
-    let out = BufWriter::new(stdout());
-    solve(scan, out)
-}
-*/

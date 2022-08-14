@@ -167,53 +167,26 @@ fn primes(n: usize) -> Vec<Uint> {
     (2..n).filter(|&i| primes[i] == 1).collect::<Vec<_>>()
 }
 
-use std::cmp::min;
-
+// Not properly finding all primes :(
 #[allow(non_snake_case)]
 fn main() -> Result<(), StopCode> {
     let mut scan = Scanner::new(stdin().bytes());
     let mut out = BufWriter::new(stdout());
-    let mut S = vec![vec![0isize; 102]; 10_002];
-    let (n, w, h) = scan.take_tuple3::<Uint, Uint, Uint>()?;
-    for i in 0..=w {
-        S[0][i] = 1;
-    }
-    for j in 1..=n {
-        S[j][1] = min(S[j - 1][1] + 1, h as isize + 1);
-    }
-    for i in 1..=n {
-        for j in 2..=w {
-            let mut sum = 0;
-            for k in 0..=min(i, h) {
-                sum = (sum + S[i - k][j - 1]) % MOD as isize;
-            }
-            S[i][j] = sum;
+    let primes = primes(31_622);
+    while let Ok(n) = scan.next::<Uint>() {
+        if n == 0 {
+            break;
+        } else if n == 1 {
+            writeln!(out, "0")?;
+            continue;
         }
+        let (t, b) = primes
+            .iter()
+            .take(n)
+            .filter_map(|p| if n % p == 0 { Some((p - 1, p)) } else { None })
+            .map(|x| dbg!(x))
+            .fold((1, 1), |(pt, pb), (num, den)| (pt * num, pb * den));
+        writeln!(out, "{}", t * (n / b))?;
     }
-    let mut count = 1;
-    let mut m = n;
-    let mut i = 0;
-    while i < h && m >= w {
-        m -= w;
-        count += 1;
-        i += 1;
-    }
-    write!(out, "{}", (&S[n][w] - count) % MOD as isize)?;
     Ok(out.flush()?)
 }
-
-/*
-#[allow(non_snake_case)]
-fn solve<R>(mut scan: Scanner<R>, mut out: BufWriter<Stdout>) -> Result<(), StopCode>
-where
-    R: Read,
-{
-    Ok(out.flush()?)
-}
-
-fn main() -> Result<(), StopCode> {
-    let scan = Scanner::new(stdin().bytes());
-    let out = BufWriter::new(stdout());
-    solve(scan, out)
-}
-*/
