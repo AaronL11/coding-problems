@@ -1,6 +1,6 @@
 main :: IO ()
 main = interact
-        $ show
+    $ show
 	. (*4)
 	. sqrt
 	. read

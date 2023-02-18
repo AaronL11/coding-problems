@@ -1,0 +1,333 @@
+#![allow(dead_code)]
+#[allow(unused_imports)]
+use std::{
+    cmp,
+    collections::{BTreeMap, BTreeSet, BinaryHeap, HashMap, HashSet, LinkedList, VecDeque},
+    error, fmt,
+    fmt::{Display, Formatter},
+    io,
+    io::{stdin, stdout, BufRead, BufWriter, Bytes, Read, Stdin, Stdout, Write},
+    iter::FromIterator,
+    str,
+    str::FromStr,
+};
+
+// Constants
+
+type Int = isize;
+type Uint = usize;
+const MOD: Uint = 1_000_000_007;
+// const INF: Int = isize::MAX;
+
+// Error handling
+
+#[derive(Debug, Default)]
+struct StopCode;
+
+impl error::Error for StopCode {}
+
+impl Display for StopCode {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        write!(f, "Code failed to execute")
+    }
+}
+
+impl From<io::Error> for StopCode {
+    fn from(_: io::Error) -> StopCode {
+        StopCode
+    }
+}
+
+// Scanner code
+
+struct Scanner<R>
+where
+    R: Read,
+{
+    bytes: Bytes<R>,
+    buffer: Vec<u8>,
+    split: str::SplitAsciiWhitespace<'static>,
+}
+
+#[allow(dead_code, unused_assignments)]
+impl<R> Scanner<R>
+where
+    R: Read,
+{
+    fn new(bytes: Bytes<R>) -> Self {
+        Self {
+            bytes,
+            buffer: Vec::new(),
+            split: "".split_ascii_whitespace(),
+        }
+    }
+    fn next<T: FromStr>(&mut self) -> Result<T, StopCode> {
+        self.get_str()?.parse::<T>().ok().ok_or(StopCode)
+    }
+    fn get_str(&mut self) -> Result<&str, StopCode> {
+        loop {
+            if let Some(input) = self.split.next() {
+                return Ok(input);
+            }
+            self.buffer.clear();
+            loop {
+                match self.bytes.next().ok_or(StopCode)? {
+                    Ok(b'\n') => {
+                        self.split = unsafe {
+                            let slice = str::from_utf8_unchecked(&self.buffer);
+                            std::mem::transmute(slice.split_ascii_whitespace())
+                        };
+                        break;
+                    }
+                    Ok(byte) => self.buffer.push(byte),
+                    Err(_) => return Err(StopCode),
+                }
+            }
+        }
+    }
+    fn flush(&mut self) {
+        self.buffer.clear()
+    }
+    fn line(&mut self) -> Result<String, StopCode> {
+        loop {
+            match self.bytes.next().ok_or(StopCode)? {
+                Ok(b'\n') => {
+                    let result = unsafe { str::from_utf8_unchecked(&self.buffer).to_owned() };
+                    self.buffer.clear();
+                    return Ok(result);
+                }
+                Ok(byte) => self.buffer.push(byte),
+                Err(_) => return Err(StopCode),
+            }
+        }
+    }
+    fn lines(&mut self) -> LineIter<R> {
+        LineIter::new(self)
+    }
+    fn words<T: FromStr>(&mut self) -> WordsIter<T, R> {
+        WordsIter::new(self)
+    }
+    fn take_into<T: FromStr, V: FromIterator<T>>(&mut self, n: usize) -> V {
+        (0..n).flat_map(|_| self.next::<T>()).collect::<V>()
+    }
+    // Only works after const generics were stabilized!!
+    fn take_tuple<T, V>(&mut self) -> Result<(T, V), StopCode>
+    where
+        T: FromStr,
+        V: FromStr,
+    {
+        Ok((self.next::<T>()?, self.next::<V>()?))
+    }
+    fn take_tuple3<T, V, U>(&mut self) -> Result<(T, V, U), StopCode>
+    where
+        T: FromStr,
+        V: FromStr,
+        U: FromStr,
+    {
+        Ok((self.next::<T>()?, self.next::<V>()?, self.next::<U>()?))
+    }
+}
+
+struct WordsIter<'a, T: FromStr, R: Read>(&'a mut Scanner<R>, std::marker::PhantomData<T>);
+
+impl<'a, T: FromStr, R: Read> WordsIter<'a, T, R> {
+    fn new(scan: &'a mut Scanner<R>) -> Self {
+        Self(scan, std::marker::PhantomData)
+    }
+}
+
+impl<'a, T, R> Iterator for WordsIter<'a, T, R>
+where
+    T: FromStr,
+    R: Read,
+{
+    type Item = T;
+    fn next(&mut self) -> Option<Self::Item> {
+        self.0.next::<T>().ok()
+    }
+}
+
+struct LineIter<'a, R: Read>(&'a mut Scanner<R>);
+
+impl<'a, R: Read> LineIter<'a, R> {
+    fn new(scan: &'a mut Scanner<R>) -> Self {
+        Self(scan)
+    }
+}
+
+// Solution Code Here
+
+/// Simple Prime Sieve
+fn primes(n: usize) -> Vec<Uint> {
+    let mut primes = vec![1; n];
+    (2..n).for_each(|i| {
+        if primes[i] == 1 {
+            (i * i..n).step_by(i).for_each(|j| primes[j] = 0)
+        }
+    });
+    (2..n).filter(|&i| primes[i] == 1).collect::<Vec<_>>()
+}
+
+fn factor_sieve(n: usize) -> Vec<usize> {
+    let mut factors = vec![2; n + 1];
+    factors[1] = 1;
+    (2..=n).for_each(|i| (i + i..=n).step_by(i).for_each(|j| factors[j] += 1));
+    factors
+}
+
+enum Opt {
+    Add,
+    Sub,
+    Div,
+    Mul,
+}
+
+fn egcd(a: Int, b: Int) -> (Int, Int, Int) {
+    if b > a {
+        let (g, x, y) = egcd(b, a);
+        (g, y, x)
+    } else if b == a {
+        (a.abs(), a.signum(), 0isize)
+    } else if b == 0 {
+        (a.abs(), a.signum(), 0isize)
+    } else {
+        let (g, x, y) = egcd(b, a % b);
+        (g, x, y - (a / b) * x)
+    }
+}
+
+fn inverse(b: Int, n: Int) -> Option<Int> {
+    let (g, _, y) = egcd(b, n);
+    if g != 1 {
+        None
+    } else {
+        Some(y)
+    }
+}
+
+fn gcd(x: isize, y: isize) -> isize {
+    if y > x {
+        gcd(y, x)
+    } else if x == y {
+        x
+    } else if y == 0 {
+        x
+    } else {
+        gcd(y, x % y)
+    }
+}
+
+struct Poly(Vec<Int>);
+
+fn add(p: &[Int], q: &[Int]) -> Vec<Int> {
+    let (n, m) = (p.len(), q.len());
+    (0..cmp::max(n, m))
+        .map(|i| {
+            if i > n {
+                q[i]
+            } else if i > m {
+                p[i]
+            } else {
+                p[i] + q[i]
+            }
+        })
+        .collect::<Vec<Int>>()
+}
+
+fn sub(p: &[Int], q: &[Int]) -> Vec<Int> {
+    let (n, m) = (p.len(), q.len());
+    (0..cmp::max(n, m))
+        .map(|i| {
+            if i > n {
+                -q[i]
+            } else if i > m {
+                p[i]
+            } else {
+                p[i] - q[i]
+            }
+        })
+        .collect::<Vec<Int>>()
+}
+
+fn mul(p: &[Int], q: &[Int]) -> Vec<Int> {
+    let (n, m) = (p.len(), q.len());
+    if let ([a, b], [c, d]) = (p, q) {
+        let ac = a * c;
+        let bd = b * d;
+        let abcd = (a + b) * (c + d) - ac - bd;
+        vec![bd, abcd, ac]
+    } else {
+        let (pl, pr) = p.split_at(p.len() / 2);
+        let (ql, qr) = q.split_at(q.len() / 2);
+        let pql = mul(pl, ql);
+        let pqr = mul(pr, qr);
+        let lpqr = mul(&add(pl, pr)[..], &add(ql, qr)[..]);
+        let lpqr2 = sub(&lpqr[..], &add(&pql[..], &pqr[..])[..]);
+        unimplemented!()
+    }
+}
+
+fn f(j: isize) -> isize {
+    j * j * j + 9 * j * j + 11 * j + 6
+}
+
+fn valid(list: &[u8]) {
+    //
+}
+
+fn solve(idxs: HashSet<usize>, nums: &mut Vec<u8>, list: &mut Vec<u8>) -> Option<(usize, Vec<u8>)> {
+    if idxs.size() == 8 {
+        if valid(&list) {
+            count += 1;
+        }
+    }
+    for i in 0..8 {
+        if idxs.contains(&i) {
+            continue;
+        }
+        idxs.insert(i);
+        list.push(nums[i]);
+        idxs.remove(&i);
+    }
+    unimplemented!()
+}
+
+#[allow(non_snake_case)]
+fn main() -> Result<(), StopCode> {
+    let mut scan = Scanner::new(stdin().bytes());
+    let mut out = BufWriter::new(stdout());
+    for _ in 0..scan.next::<Uint>()? {
+        let mut nums = [0; 9];
+        for i in 0..3 {
+            for (j, byte) in scan.get_str()?.bytes().enumerate() {
+                nums[i + j] = byte - 48;
+            }
+        }
+        if let Some((n, list)) = solve(&mut nums) {
+            write!(
+                out,
+                "{} {}{} {}{} {}{}{}{}",
+                n, list[0], list[1], list[2], list[3], list[4], list[5], list[6], list[7]
+            )?;
+        } else {
+            writeln!(out, "0")?;
+        }
+    }
+    Ok(out.flush()?)
+}
+
+/*
+#[allow(non_snake_case)]
+fn solve<R>(mut scan: Scanner<R>, mut out: BufWriter<Stdout>) -> Result<(), StopCode>
+where
+    R: Read,
+{
+    Ok(out.flush()?)
+}
+
+fn main() -> Result<(), StopCode> {
+    let scan = Scanner::new(stdin().bytes());
+    let out = BufWriter::new(stdout());
+    solve(scan, out)
+}
+*/

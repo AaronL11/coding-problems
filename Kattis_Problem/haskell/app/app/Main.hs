@@ -8,10 +8,14 @@ import qualified Data.Map as M
 import qualified Data.ByteString.Lazy.Char8 as C
 import qualified Data.Array as A
 
+import Data.Maybe (catMaybes)
+
+import Text.Read (readMaybe)
+
 import Data.List.Split (chunksOf)
 
 import Data.Maybe (isNothing, isJust, fromJust)
-import Data.Char (isDigit, isSpace)
+import Data.Char (isDigit, isSpace, chr)
 
 import Control.Applicative
 import Control.Monad (replicateM)
@@ -88,22 +92,78 @@ primes :: [Integer]
 primes = 2 : sieve primes [3..]
   where
     sieve (p:ps) xs =
-      let (h,t) = span (< p*p) xs
-      in  h ++ sieve ps (filter ((/=0).(`mod`p)) t)
-
+        let (h,tj) = span (< p*p) xs
+      in  h ++ sieve ps (filter ((/=0).(`mod`p)) tj)
 
 main :: IO ()
-main = C.interact
-    $ C.unlines
-    . map (C.pack . show . solve'' . read . C.unpack)
-    . C.lines
-        where solve 0   = 1
-              solve n   = (solve' A.! (n `div` 2)) + (solve' A.! ((2*n) `div` 3)) + n
-              solve'    = A.listArray (0,100_000) (1 : map solve [1..100_000])
-              solve'' n = -- takeWhile (\(x,y) -> y > 5*x)
-                        -- . reverse
-                         enumerate
-                        . map solve
-                        $ [0..n]
+main = C.interact $ solve . scan str
+    where
+        solve :: C.ByteString -> C.ByteString
+        solve = C.pack
+                . (\x -> if x=="Hey" then "hmm" else x)
+                . rev
+                . foldl1 min
+                . catMaybes
+                . map parse
+                . L.permutations
+                . C.unpack
+        parse :: String -> Maybe Int
+        parse ('X':'X':'X':cs)      = filt cs 30
+        parse ('X':'X':cs)          = filt cs 20
+        parse ('X':'L':cs)          = filt cs 40
+        parse ('X':'C':cs)          = filt cs 90
+        parse ('X':cs)              = filt cs 10
+        parse ('L':'X':'X':'X':cs)  = filt cs 80
+        parse ('L':'X':'X':cs)      = filt cs 70
+        parse ('L':'X':cs)          = filt cs 60
+        parse ('L':cs)              = filt cs 50
+        parse ('C':_)               = Nothing
+        parse s = case s of
+                    []      -> Just 0
+                    "I"     -> Just 1
+                    "II"    -> Just 2
+                    "III"   -> Just 3
+                    "IV"    -> Just 4
+                    "V"     -> Just 5
+                    "VI"    -> Just 6
+                    "VII"   -> Just 7
+                    "VIII"  -> Just 8
+                    "IX"    -> Just 9
+                    "X"     -> Just 10
+                    "XX"    -> Just 20
+                    "XXX"   -> Just 30
+                    "XL"    -> Just 40
+                    "L"     -> Just 50
+                    "LX"    -> Just 60
+                    "LXX"   -> Just 70
+                    "LXXX"  -> Just 80
+                    "XC"    -> Just 90
+                    _       -> Nothing
+        filt :: String -> Int -> Maybe Int
+        filt cs n = case cs of
+                    ('C':_) -> Nothing
+                    ('X':_) -> Nothing
+                    ('L':_) -> Nothing
+                    _       -> Just (+n) <*> parse cs
+        rev :: Int -> String
+        rev n = case n of
+                  1  -> "I"
+                  2  -> "II"
+                  3  -> "III"
+                  4  -> "IV"
+                  5  -> "V"
+                  6  -> "VI"
+                  7  -> "VII"
+                  8  -> "VIII"
+                  9  -> "IX"
+                  10 -> "X"
+                  20 -> "XX"
+                  30 -> "XXX"
+                  40 -> "XL"
+                  50 -> "L"
+                  60 -> "LX"
+                  70 -> "LXX"
+                  80 -> "LXXX"
+                  90 -> "XC"
+                  _  -> rev ((div n 10) * 10) <> rev (mod n 10)
 
--- Sentence AST

@@ -2,11 +2,14 @@
 #[allow(unused_imports)]
 use std::{
     cmp,
-    collections::{BTreeMap, BTreeSet, BinaryHeap, HashMap, HashSet, VecDeque},
+    collections::{BTreeMap, BTreeSet, BinaryHeap, HashMap, HashSet, LinkedList, VecDeque},
     error, fmt,
     fmt::{Display, Formatter},
+    hash::Hash,
     io,
     io::{stdin, stdout, BufRead, BufWriter, Bytes, Read, Stdin, Stdout, Write},
+    iter,
+    iter::FromIterator,
     str,
     str::FromStr,
 };
@@ -15,6 +18,8 @@ use std::{
 
 type Int = isize;
 type Uint = usize;
+const EPSILON: f64 = 1e-5;
+const INF: isize = 1_000_000_000;
 const MOD: Uint = 1_000_000_007;
 // const INF: Int = isize::MAX;
 
@@ -106,8 +111,8 @@ where
     fn words<T: FromStr>(&mut self) -> WordsIter<T, R> {
         WordsIter::new(self)
     }
-    fn take<T: FromStr>(&mut self, n: usize) -> Vec<T> {
-        self.words::<T>().take(n).collect::<Vec<T>>()
+    fn take_into<T: FromStr, V: FromIterator<T>>(&mut self, n: usize) -> V {
+        (0..n).flat_map(|_| self.next::<T>()).collect::<V>()
     }
     // Only works after const generics were stabilized!!
     fn take_tuple<T, V>(&mut self) -> Result<(T, V), StopCode>
@@ -154,66 +159,11 @@ impl<'a, R: Read> LineIter<'a, R> {
     }
 }
 
-// Solution Code Here
-
-/// Simple Prime Sieve
-fn primes(n: usize) -> Vec<Uint> {
-    let mut primes = vec![1; n];
-    (2..n).for_each(|i| {
-        if primes[i] == 1 {
-            (i * i..n).step_by(i).for_each(|j| primes[j] = 0)
-        }
-    });
-    (2..n).filter(|&i| primes[i] == 1).collect::<Vec<_>>()
-}
-
-use std::cmp::min;
+// Solution Code
 
 #[allow(non_snake_case)]
 fn main() -> Result<(), StopCode> {
     let mut scan = Scanner::new(stdin().bytes());
     let mut out = BufWriter::new(stdout());
-    let mut S = vec![vec![0isize; 102]; 10_002];
-    let (n, w, h) = scan.take_tuple3::<Uint, Uint, Uint>()?;
-    for i in 0..=w {
-        S[0][i] = 1;
-    }
-    for j in 1..=n {
-        S[j][1] = min(S[j - 1][1] + 1, h as isize + 1);
-    }
-    for i in 1..=n {
-        for j in 2..=w {
-            let mut sum = 0;
-            for k in 0..=min(i, h) {
-                sum = (sum + S[i - k][j - 1]) % MOD as isize;
-            }
-            S[i][j] = sum;
-        }
-    }
-    let mut count = 1;
-    let mut m = n;
-    let mut i = 0;
-    while i < h && m >= w {
-        m -= w;
-        count += 1;
-        i += 1;
-    }
-    write!(out, "{}", (&S[n][w] - count) % MOD as isize)?;
     Ok(out.flush()?)
 }
-
-/*
-#[allow(non_snake_case)]
-fn solve<R>(mut scan: Scanner<R>, mut out: BufWriter<Stdout>) -> Result<(), StopCode>
-where
-    R: Read,
-{
-    Ok(out.flush()?)
-}
-
-fn main() -> Result<(), StopCode> {
-    let scan = Scanner::new(stdin().bytes());
-    let out = BufWriter::new(stdout());
-    solve(scan, out)
-}
-*/
