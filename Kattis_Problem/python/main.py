@@ -1,20 +1,8 @@
-N,M = map(int,input().split())
-list = []
-for c in range(1,N+1):
-    line = input().split()
-    sum = 0
-    for i,w in zip(range(1,M+1),line):
-        if i % 15 == 0:
-            if w == "fizzbuzz":
-                sum += 1
-        elif i % 3 == 0:
-            if w == "fizz":
-                sum += 1
-        elif i % 5 == 0:
-            if w == "buzz":
-                sum += 1
-        elif str(i) == w:
-            sum += 1
-    list.append((sum,-c))
-list.sort()
-print(-list[-1][1])
+C = int(input())
+for _ in range(C):
+    arr = list(map(int,input().split()))
+    av = sum(arr)/len(arr)
+    print(len(arr))
+    print(sum(arr))
+    print(av)
+    print(f'{sum(x for x in arr if x >= av) / len(arr):.3f}%')

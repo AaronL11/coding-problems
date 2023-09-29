@@ -165,5 +165,7 @@ impl<'a, R: Read> LineIter<'a, R> {
 fn main() -> Result<(), StopCode> {
     let mut scan = Scanner::new(stdin().bytes());
     let mut out = BufWriter::new(stdout());
+    let n = scan.next::<u32>()?;
+    writeln!(out,"{}",(2u64.pow(n)+1).pow(2))?;
     Ok(out.flush()?)
 }
