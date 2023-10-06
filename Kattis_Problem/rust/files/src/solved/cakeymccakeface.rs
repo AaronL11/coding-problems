@@ -161,49 +161,45 @@ impl<'a, R: Read> LineIter<'a, R> {
 
 // Solution Code
 
-const MAX: usize = 0b11111111111111111111111111;
-
-struct DP {
-    words: Vec<usize>,
-}
-
-impl DP {
-    fn choose(&mut self, l: usize, i: usize) -> usize {
-        if i == 0 {
-            if l & !self.words[0] == 0 {
-                1
-            } else {
-                0
+fn diff(t: Uint, ins: &Vec<Uint>, outs: &Vec<Uint>) -> Uint {
+    let mut cnt = 0;
+    for (i, x) in ins.iter().enumerate() {
+        for y in &outs[i..] {
+            if x <= y {
+                if y - x == t {
+                    cnt += 1;
+                }
             }
-        } else if l == 0 {
-            1
-        } else {
-            self.choose(l & !self.words[i], i - 1) + self.choose(l, i - 1)
         }
     }
+    cnt
 }
 
 #[allow(non_snake_case)]
 fn main() -> Result<(), StopCode> {
     let mut scan = Scanner::new(stdin().bytes());
     let mut out = BufWriter::new(stdout());
-    let n = scan.next::<Uint>()?;
-    let mut words = Vec::with_capacity(n);
-    let mut tot = MAX;
-    for _ in 0..n {
-        let b = scan
-            .get_str()?
-            .bytes()
-            .map(|b| b as usize)
-            .fold(0, |acc, b| acc | (1 << (b - 97)));
-        tot &= !b;
-        words.push(b);
+    let N = scan.next()?;
+    let M = scan.next()?;
+    let ins = scan.take_into::<Uint, Vec<_>>(N);
+    let outs = scan.take_into::<Uint, Vec<_>>(M);
+    let mut map: HashMap<Uint, Uint> = HashMap::new();
+    for x in ins {
+        for &y in &outs {
+            if x <= y {
+                if let Some(z) = map.get_mut(&(y - x)) {
+                    *z += 1;
+                } else {
+                    map.insert(y - x, 1);
+                }
+            }
+        }
     }
-    if tot == 0 {
-        let mut dp = DP { words };
-        writeln!(out, "{}", dp.choose(MAX, n - 1))?;
-    } else {
-        writeln!(out, "0")?;
-    }
+    let mut ans = map
+        .into_iter()
+        .map(|(k, v)| (-(v as isize), k))
+        .collect::<Vec<_>>();
+    ans.sort();
+    writeln!(out, "{}", if ans.len() > 0 { ans[0].1 } else { 0 })?;
     Ok(out.flush()?)
 }

@@ -160,50 +160,43 @@ impl<'a, R: Read> LineIter<'a, R> {
 }
 
 // Solution Code
-
-const MAX: usize = 0b11111111111111111111111111;
-
-struct DP {
-    words: Vec<usize>,
-}
-
-impl DP {
-    fn choose(&mut self, l: usize, i: usize) -> usize {
-        if i == 0 {
-            if l & !self.words[0] == 0 {
-                1
-            } else {
-                0
-            }
-        } else if l == 0 {
-            1
-        } else {
-            self.choose(l & !self.words[i], i - 1) + self.choose(l, i - 1)
-        }
-    }
-}
-
+//
 #[allow(non_snake_case)]
 fn main() -> Result<(), StopCode> {
     let mut scan = Scanner::new(stdin().bytes());
     let mut out = BufWriter::new(stdout());
-    let n = scan.next::<Uint>()?;
-    let mut words = Vec::with_capacity(n);
-    let mut tot = MAX;
-    for _ in 0..n {
-        let b = scan
-            .get_str()?
-            .bytes()
-            .map(|b| b as usize)
-            .fold(0, |acc, b| acc | (1 << (b - 97)));
-        tot &= !b;
-        words.push(b);
+    let (n, m) = scan.take_tuple::<Uint, Uint>()?;
+    let mut ppl = (0..n)
+        .flat_map(|_| scan.next::<Int>())
+        .map(|x| (x, vec![]))
+        .collect::<Vec<(_, Vec<Uint>)>>();
+    for _ in 0..m {
+        let (u, v) = scan.take_tuple::<Uint, Uint>()?;
+        ppl[u].1.push(v);
+        ppl[v].1.push(u);
     }
-    if tot == 0 {
-        let mut dp = DP { words };
-        writeln!(out, "{}", dp.choose(MAX, n - 1))?;
-    } else {
-        writeln!(out, "0")?;
+    let mut left = (0..n).collect::<HashSet<_>>();
+    let mut u = 0;
+    let mut CC = true;
+    while !left.is_empty() {
+        let mut sum = 0;
+        let mut stack = vec![u];
+        while let Some(v) = stack.pop() {
+            if !left.contains(&v) {
+                continue;
+            }
+            left.remove(&v);
+            let (c, es) = &ppl[v];
+            sum += c;
+            for x in es {
+                stack.push(*x);
+            }
+        }
+        CC = CC && sum == 0;
+        if let Some(x) = left.iter().next() {
+            u = *x;
+        }
     }
+    writeln!(out, "{}POSSIBLE", if CC { "" } else { "IM" })?;
     Ok(out.flush()?)
 }

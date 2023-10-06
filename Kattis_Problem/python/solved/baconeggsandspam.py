@@ -12,3 +12,4 @@ while True:
     for ing in sorted(cust):
         print(f"{ing} {' '.join(sorted(cust[ing]))}")
     print()
+

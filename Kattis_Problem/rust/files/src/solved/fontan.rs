@@ -161,49 +161,55 @@ impl<'a, R: Read> LineIter<'a, R> {
 
 // Solution Code
 
-const MAX: usize = 0b11111111111111111111111111;
-
-struct DP {
-    words: Vec<usize>,
-}
-
-impl DP {
-    fn choose(&mut self, l: usize, i: usize) -> usize {
-        if i == 0 {
-            if l & !self.words[0] == 0 {
-                1
-            } else {
-                0
-            }
-        } else if l == 0 {
-            1
-        } else {
-            self.choose(l & !self.words[i], i - 1) + self.choose(l, i - 1)
-        }
-    }
-}
-
 #[allow(non_snake_case)]
 fn main() -> Result<(), StopCode> {
     let mut scan = Scanner::new(stdin().bytes());
     let mut out = BufWriter::new(stdout());
-    let n = scan.next::<Uint>()?;
-    let mut words = Vec::with_capacity(n);
-    let mut tot = MAX;
-    for _ in 0..n {
-        let b = scan
-            .get_str()?
-            .bytes()
-            .map(|b| b as usize)
-            .fold(0, |acc, b| acc | (1 << (b - 97)));
-        tot &= !b;
-        words.push(b);
+    let mut grid = [[b'.'; 52]; 52];
+    let (N, M) = scan.take_tuple::<Uint, Uint>()?;
+    for i in 1..=N {
+        let row = scan.next::<String>()?;
+        let row = row.as_bytes();
+        for j in 1..=M {
+            grid[i][j] = row[j - 1];
+        }
     }
-    if tot == 0 {
-        let mut dp = DP { words };
-        writeln!(out, "{}", dp.choose(MAX, n - 1))?;
-    } else {
-        writeln!(out, "0")?;
+    let mut change = true;
+    while change {
+        change = false;
+        for i in 1..=N {
+            for j in 1..=M {
+                if grid[i][j] == b'V' {
+                    match grid[i + 1][j] {
+                        b'#' => {
+                            if grid[i][j - 1] == b'.' {
+                                grid[i][j - 1];
+                                grid[i][j - 1] = b'V';
+                                change = true;
+                            }
+                            if grid[i][j + 1] == b'.' {
+                                grid[i][j + 1] = b'V';
+                                grid[i][j + 1];
+                                change = true;
+                            }
+                        }
+                        b'.' => {
+                            grid[i + 1][j] = b'V';
+                            grid[i - 1][j];
+                            change = true;
+                        }
+                        b'V' => continue,
+                        _ => unreachable!(),
+                    }
+                }
+            }
+        }
+    }
+    for row in &grid[1..=N] {
+        for col in &row[1..=M] {
+            write!(out, "{}", *col as char)?;
+        }
+        write!(out, "\n")?;
     }
     Ok(out.flush()?)
 }
