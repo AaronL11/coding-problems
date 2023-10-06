@@ -5,8 +5,10 @@ use std::{
     collections::{BTreeMap, BTreeSet, BinaryHeap, HashMap, HashSet, LinkedList, VecDeque},
     error, fmt,
     fmt::{Display, Formatter},
+    hash::Hash,
     io,
     io::{stdin, stdout, BufRead, BufWriter, Bytes, Read, Stdin, Stdout, Write},
+    iter,
     iter::FromIterator,
     str,
     str::FromStr,
@@ -16,6 +18,8 @@ use std::{
 
 type Int = isize;
 type Uint = usize;
+const EPSILON: f64 = 1e-5;
+const INF: isize = 1_000_000_000;
 const MOD: Uint = 1_000_000_007;
 // const INF: Int = isize::MAX;
 
@@ -155,179 +159,41 @@ impl<'a, R: Read> LineIter<'a, R> {
     }
 }
 
-// Solution Code Here
+// Solution Code
 
-/// Simple Prime Sieve
-fn primes(n: usize) -> Vec<Uint> {
-    let mut primes = vec![1; n];
-    (2..n).for_each(|i| {
-        if primes[i] == 1 {
-            (i * i..n).step_by(i).for_each(|j| primes[j] = 0)
-        }
-    });
-    (2..n).filter(|&i| primes[i] == 1).collect::<Vec<_>>()
-}
-
-fn factor_sieve(n: usize) -> Vec<usize> {
-    let mut factors = vec![2; n + 1];
-    factors[1] = 1;
-    (2..=n).for_each(|i| (i + i..=n).step_by(i).for_each(|j| factors[j] += 1));
-    factors
-}
-
-enum Opt {
-    Add,
-    Sub,
-    Div,
-    Mul,
-}
-
-fn egcd(a: Int, b: Int) -> (Int, Int, Int) {
-    if b > a {
-        let (g, x, y) = egcd(b, a);
-        (g, y, x)
-    } else if b == a {
-        (a.abs(), a.signum(), 0isize)
-    } else if b == 0 {
-        (a.abs(), a.signum(), 0isize)
+fn solve(
+    idx: u8,
+    x: u8,
+    k: u8,
+    set: &mut HashSet<u8>,
+    out: &mut BufWriter<Stdout>,
+    str: &mut String
+) -> Result<(), StopCode> {
+    if idx > k {
+        writeln!(out,"{}",str)?;
     } else {
-        let (g, x, y) = egcd(b, a % b);
-        (g, x, y - (a / b) * x)
-    }
-}
-
-fn inverse(b: Int, n: Int) -> Option<Int> {
-    let (g, _, y) = egcd(b, n);
-    if g != 1 {
-        None
-    } else {
-        Some(y)
-    }
-}
-
-fn gcd(x: isize, y: isize) -> isize {
-    if y > x {
-        gcd(y, x)
-    } else if x == y {
-        x
-    } else if y == 0 {
-        x
-    } else {
-        gcd(y, x % y)
-    }
-}
-
-struct Poly(Vec<Int>);
-
-fn add(p: &[Int], q: &[Int]) -> Vec<Int> {
-    let (n, m) = (p.len(), q.len());
-    (0..cmp::max(n, m))
-        .map(|i| {
-            if i > n {
-                q[i]
-            } else if i > m {
-                p[i]
-            } else {
-                p[i] + q[i]
+        for i in if idx <= x {0..x} else {x..k} {
+            if !set.contains(&i) {
+                str.push((i + 48) as char);
+                set.insert(i);
+                solve(idx+1,x,k,set,out,str)?;
+                set.remove(&i);
+                str.pop();
             }
-        })
-        .collect::<Vec<Int>>()
-}
-
-fn sub(p: &[Int], q: &[Int]) -> Vec<Int> {
-    let (n, m) = (p.len(), q.len());
-    (0..cmp::max(n, m))
-        .map(|i| {
-            if i > n {
-                -q[i]
-            } else if i > m {
-                p[i]
-            } else {
-                p[i] - q[i]
-            }
-        })
-        .collect::<Vec<Int>>()
-}
-
-fn mul(p: &[Int], q: &[Int]) -> Vec<Int> {
-    let (n, m) = (p.len(), q.len());
-    if let ([a, b], [c, d]) = (p, q) {
-        let ac = a * c;
-        let bd = b * d;
-        let abcd = (a + b) * (c + d) - ac - bd;
-        vec![bd, abcd, ac]
-    } else {
-        let (pl, pr) = p.split_at(p.len() / 2);
-        let (ql, qr) = q.split_at(q.len() / 2);
-        let pql = mul(pl, ql);
-        let pqr = mul(pr, qr);
-        let lpqr = mul(&add(pl, pr)[..], &add(ql, qr)[..]);
-        let lpqr2 = sub(&lpqr[..], &add(&pql[..], &pqr[..])[..]);
-        unimplemented!()
-    }
-}
-
-fn f(j: isize) -> isize {
-    j * j * j + 9 * j * j + 11 * j + 6
-}
-
-fn valid(list: &[u8]) {
-    //
-}
-
-fn solve(idxs: HashSet<usize>, nums: &mut Vec<u8>, list: &mut Vec<u8>) -> Option<(usize, Vec<u8>)> {
-    if idxs.size() == 8 {
-        if valid(&list) {
-            count += 1;
         }
     }
-    for i in 0..8 {
-        if idxs.contains(&i) {
-            continue;
-        }
-        idxs.insert(i);
-        list.push(nums[i]);
-        idxs.remove(&i);
-    }
-    unimplemented!()
+    Ok(())
 }
+
 
 #[allow(non_snake_case)]
 fn main() -> Result<(), StopCode> {
     let mut scan = Scanner::new(stdin().bytes());
     let mut out = BufWriter::new(stdout());
-    for _ in 0..scan.next::<Uint>()? {
-        let mut nums = [0; 9];
-        for i in 0..3 {
-            for (j, byte) in scan.get_str()?.bytes().enumerate() {
-                nums[i + j] = byte - 48;
-            }
-        }
-        if let Some((n, list)) = solve(&mut nums) {
-            write!(
-                out,
-                "{} {}{} {}{} {}{}{}{}",
-                n, list[0], list[1], list[2], list[3], list[4], list[5], list[6], list[7]
-            )?;
-        } else {
-            writeln!(out, "0")?;
-        }
-    }
+    let (k,x) = scan.take_tuple::<u8,u8>()?;
+    let mut str = String::with_capacity(k as usize);
+    let mut set = HashSet::new();
+    solve(1,x,k,&mut set,&mut out, &mut str)?;
     Ok(out.flush()?)
 }
 
-/*
-#[allow(non_snake_case)]
-fn solve<R>(mut scan: Scanner<R>, mut out: BufWriter<Stdout>) -> Result<(), StopCode>
-where
-    R: Read,
-{
-    Ok(out.flush()?)
-}
-
-fn main() -> Result<(), StopCode> {
-    let scan = Scanner::new(stdin().bytes());
-    let out = BufWriter::new(stdout());
-    solve(scan, out)
-}
-*/
