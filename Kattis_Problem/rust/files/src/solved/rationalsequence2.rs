@@ -161,25 +161,14 @@ impl<'a, R: Read> LineIter<'a, R> {
 
 // Solution Code
 
-const MAX: usize = 0b11111111111111111111111111;
-
-struct DP {
-    words: Vec<usize>,
-}
-
-impl DP {
-    fn choose(&mut self, l: usize, i: usize) -> usize {
-        if i == 0 {
-            if l & !self.words[0] == 0 {
-                1
-            } else {
-                0
-            }
-        } else if l == 0 {
-            1
-        } else {
-            self.choose(l & !self.words[i], i - 1) + self.choose(l, i - 1)
-        }
+#[allow(non_snake_case)]
+fn F(p: Uint, q: Uint) -> Uint {
+    if p == q {
+        1
+    } else if p > q {
+        F(p - q, q) * 2 + 1
+    } else {
+        F(p, q - p) * 2
     }
 }
 
@@ -187,23 +176,14 @@ impl DP {
 fn main() -> Result<(), StopCode> {
     let mut scan = Scanner::new(stdin().bytes());
     let mut out = BufWriter::new(stdout());
-    let n = scan.next::<Uint>()?;
-    let mut words = Vec::with_capacity(n);
-    let mut tot = MAX;
-    for _ in 0..n {
-        let b = scan
-            .get_str()?
-            .bytes()
-            .map(|b| b as usize)
-            .fold(0, |acc, b| acc | (1 << (b - 97)));
-        tot &= !b;
-        words.push(b);
-    }
-    if tot == 0 {
-        let mut dp = DP { words };
-        writeln!(out, "{}", dp.choose(MAX, n - 1))?;
-    } else {
-        writeln!(out, "0")?;
+    let P = scan.next()?;
+    for _ in 0u16..P {
+        let K = scan.next::<Uint>()?;
+        let frac = scan.next::<String>()?;
+        let i = frac.find('/').unwrap();
+        let (p, q) = (&frac[..i], &frac[i + 1..]);
+        let (p, q) = (p.parse::<Uint>().unwrap(), q.parse::<Uint>().unwrap());
+        writeln!(out, "{} {}", K, F(p, q))?;
     }
     Ok(out.flush()?)
 }

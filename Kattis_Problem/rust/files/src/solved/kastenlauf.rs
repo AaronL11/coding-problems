@@ -161,49 +161,73 @@ impl<'a, R: Read> LineIter<'a, R> {
 
 // Solution Code
 
-const MAX: usize = 0b11111111111111111111111111;
-
-struct DP {
-    words: Vec<usize>,
+#[allow(non_snake_case)]
+#[derive(Debug)]
+pub struct DSU {
+    parent: Vec<Uint>,
 }
 
-impl DP {
-    fn choose(&mut self, l: usize, i: usize) -> usize {
-        if i == 0 {
-            if l & !self.words[0] == 0 {
-                1
-            } else {
-                0
-            }
-        } else if l == 0 {
-            1
-        } else {
-            self.choose(l & !self.words[i], i - 1) + self.choose(l, i - 1)
+impl DSU {
+    fn new(n: Uint) -> Self {
+        Self {
+            parent: (0..n).collect(),
         }
     }
+    fn make_set(&mut self, n: usize) {
+        self.parent[n] = n;
+    }
+    fn find(&mut self, v: usize) -> usize {
+        if v == self.parent[v] {
+            v
+        } else {
+            self.parent[v] = self.find(self.parent[v]);
+            self.parent[v]
+        }
+    }
+    fn union(&mut self, a: usize, b: usize) {
+        let a = self.find(a);
+        let b = self.find(b);
+        if a != b {
+            self.parent[b] = a;
+        }
+    }
+}
+
+fn dist((x, y): (Int, Int), (a, b): (Int, Int)) -> Uint {
+    ((x - a).abs() + (b - y).abs()) as usize
 }
 
 #[allow(non_snake_case)]
 fn main() -> Result<(), StopCode> {
     let mut scan = Scanner::new(stdin().bytes());
     let mut out = BufWriter::new(stdout());
-    let n = scan.next::<Uint>()?;
-    let mut words = Vec::with_capacity(n);
-    let mut tot = MAX;
-    for _ in 0..n {
-        let b = scan
-            .get_str()?
-            .bytes()
-            .map(|b| b as usize)
-            .fold(0, |acc, b| acc | (1 << (b - 97)));
-        tot &= !b;
-        words.push(b);
-    }
-    if tot == 0 {
-        let mut dp = DP { words };
-        writeln!(out, "{}", dp.choose(MAX, n - 1))?;
-    } else {
-        writeln!(out, "0")?;
+    let t = scan.next()?;
+    for _ in 0..t {
+        let n = scan.next::<Uint>()?;
+        let mut edges: Vec<(Uint, Vec<Uint>)> = (0..n + 2).map(|i| (i, vec![])).collect::<Vec<_>>();
+        let mut V = DSU::new(n + 2);
+        let s = scan.take_tuple::<Int, Int>()?;
+        let mut vertices = vec![(0, s)];
+        for i in 1..=n + 1 {
+            let v = scan.take_tuple::<Int, Int>()?;
+            for (j, u) in &vertices {
+                if dist(*u, v) <= 1000 {
+                    edges[i].1.push(*j);
+                    edges[*j].1.push(i);
+                    V.union(i, *j);
+                }
+            }
+            vertices.push((i, v));
+        }
+        writeln!(
+            out,
+            "{}",
+            if V.find(0) == V.find(n + 1) {
+                "happy"
+            } else {
+                "sad"
+            }
+        )?;
     }
     Ok(out.flush()?)
 }

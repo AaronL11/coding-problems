@@ -161,49 +161,54 @@ impl<'a, R: Read> LineIter<'a, R> {
 
 // Solution Code
 
-const MAX: usize = 0b11111111111111111111111111;
-
-struct DP {
-    words: Vec<usize>,
-}
-
-impl DP {
-    fn choose(&mut self, l: usize, i: usize) -> usize {
-        if i == 0 {
-            if l & !self.words[0] == 0 {
-                1
+#[allow(non_snake_case)]
+fn lis(X: Vec<Uint>) -> Vec<Uint> {
+    let n = X.len();
+    let mut L = 0;
+    let mut M = vec![0; n + 1];
+    let mut P = vec![0; n];
+    for i in 0..n {
+        let (mut low, mut hig) = (1, L + 1);
+        while low < hig {
+            let mid = low + (hig - low) / 2;
+            if X[M[mid]] >= X[i] {
+                hig = mid
             } else {
-                0
+                low = mid + 1
             }
-        } else if l == 0 {
-            1
-        } else {
-            self.choose(l & !self.words[i], i - 1) + self.choose(l, i - 1)
+        }
+        let l = low;
+        P[i] = M[l - 1];
+        M[l] = i;
+        if l > L {
+            L = l;
         }
     }
+    let mut S = vec![0; L];
+    let mut k = M[L];
+    for j in (0..L).rev() {
+        S[j] = X[k];
+        k = P[k];
+    }
+    S
 }
 
 #[allow(non_snake_case)]
 fn main() -> Result<(), StopCode> {
     let mut scan = Scanner::new(stdin().bytes());
     let mut out = BufWriter::new(stdout());
-    let n = scan.next::<Uint>()?;
-    let mut words = Vec::with_capacity(n);
-    let mut tot = MAX;
-    for _ in 0..n {
-        let b = scan
-            .get_str()?
-            .bytes()
-            .map(|b| b as usize)
-            .fold(0, |acc, b| acc | (1 << (b - 97)));
-        tot &= !b;
-        words.push(b);
-    }
-    if tot == 0 {
-        let mut dp = DP { words };
-        writeln!(out, "{}", dp.choose(MAX, n - 1))?;
-    } else {
-        writeln!(out, "0")?;
+    loop {
+        let n = scan.next::<Uint>()?;
+        if n == 0 {
+            break;
+        }
+        let seq = scan.take_into::<Uint, Vec<_>>(n);
+        let lis = lis(seq);
+        write!(out, "{}", lis.len())?;
+        for x in lis {
+            write!(out, " {}", x)?;
+        }
+        write!(out, "\n")?;
     }
     Ok(out.flush()?)
 }

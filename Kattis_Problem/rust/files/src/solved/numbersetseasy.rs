@@ -161,24 +161,46 @@ impl<'a, R: Read> LineIter<'a, R> {
 
 // Solution Code
 
-const MAX: usize = 0b11111111111111111111111111;
-
-struct DP {
-    words: Vec<usize>,
+#[allow(dead_code)]
+fn prime_sieve(n: usize) -> Vec<usize> {
+    assert!(n >= 2);
+    let mut primes = vec![1; n];
+    (2..n).for_each(|i| {
+        if primes[i] == 1 {
+            (i * i..n).step_by(i).for_each(|j| primes[j] = 0)
+        }
+    });
+    (2..n).filter(|&i| primes[i] == 1).collect::<Vec<_>>()
 }
 
-impl DP {
-    fn choose(&mut self, l: usize, i: usize) -> usize {
-        if i == 0 {
-            if l & !self.words[0] == 0 {
-                1
-            } else {
-                0
-            }
-        } else if l == 0 {
-            1
+#[allow(non_snake_case)]
+#[derive(Debug)]
+pub struct DSU {
+    parent: Vec<Uint>,
+    size: Uint,
+}
+
+impl DSU {
+    fn new(n: Uint) -> Self {
+        Self {
+            parent: (0..n).collect(),
+            size: n,
+        }
+    }
+    fn find(&mut self, v: usize) -> usize {
+        if v == self.parent[v] {
+            v
         } else {
-            self.choose(l & !self.words[i], i - 1) + self.choose(l, i - 1)
+            self.parent[v] = self.find(self.parent[v]);
+            self.parent[v]
+        }
+    }
+    fn union(&mut self, a: usize, b: usize) {
+        let a = self.find(a);
+        let b = self.find(b);
+        if a != b {
+            self.parent[b] = a;
+            self.size -= 1;
         }
     }
 }
@@ -187,23 +209,25 @@ impl DP {
 fn main() -> Result<(), StopCode> {
     let mut scan = Scanner::new(stdin().bytes());
     let mut out = BufWriter::new(stdout());
-    let n = scan.next::<Uint>()?;
-    let mut words = Vec::with_capacity(n);
-    let mut tot = MAX;
-    for _ in 0..n {
-        let b = scan
-            .get_str()?
-            .bytes()
-            .map(|b| b as usize)
-            .fold(0, |acc, b| acc | (1 << (b - 97)));
-        tot &= !b;
-        words.push(b);
-    }
-    if tot == 0 {
-        let mut dp = DP { words };
-        writeln!(out, "{}", dp.choose(MAX, n - 1))?;
-    } else {
-        writeln!(out, "0")?;
+    let C = scan.next()?;
+    let primes = prime_sieve(1000);
+    for i in 0..C {
+        let (A, B) = scan.take_tuple::<Uint, Uint>()?;
+        let P = scan.next::<Uint>()?;
+        let mut int = DSU::new(B - A + 1);
+        for n in A..=B {
+            for m in n..=B {
+                for p in primes.iter().rev() {
+                    if p < &P {
+                        break;
+                    }
+                    if n % p == 0 && m % p == 0 {
+                        int.union(n - A, m - A);
+                    }
+                }
+            }
+        }
+        writeln!(out, "Case #{}: {}", i + 1, int.size)?;
     }
     Ok(out.flush()?)
 }

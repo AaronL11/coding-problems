@@ -5,8 +5,7 @@ use std::{
     collections::{BTreeMap, BTreeSet, BinaryHeap, HashMap, HashSet, LinkedList, VecDeque},
     error, fmt,
     fmt::{Display, Formatter},
-    hash::Hash,
-    io,
+    fs, io,
     io::{stdin, stdout, BufRead, BufWriter, Bytes, Read, Stdin, Stdout, Write},
     iter,
     iter::FromIterator,
@@ -19,7 +18,7 @@ use std::{
 type Int = isize;
 type Uint = usize;
 const EPSILON: f64 = 1e-5;
-const INF: isize = 1_000_000_000;
+const INF: usize = 1_000_000_000;
 const MOD: Uint = 1_000_000_007;
 // const INF: Int = isize::MAX;
 
@@ -159,51 +158,29 @@ impl<'a, R: Read> LineIter<'a, R> {
     }
 }
 
-// Solution Code
-
-const MAX: usize = 0b11111111111111111111111111;
-
-struct DP {
-    words: Vec<usize>,
-}
-
-impl DP {
-    fn choose(&mut self, l: usize, i: usize) -> usize {
-        if i == 0 {
-            if l & !self.words[0] == 0 {
-                1
-            } else {
-                0
-            }
-        } else if l == 0 {
-            1
-        } else {
-            self.choose(l & !self.words[i], i - 1) + self.choose(l, i - 1)
-        }
-    }
-}
+// Solution Code Here
 
 #[allow(non_snake_case)]
 fn main() -> Result<(), StopCode> {
-    let mut scan = Scanner::new(stdin().bytes());
     let mut out = BufWriter::new(stdout());
-    let n = scan.next::<Uint>()?;
-    let mut words = Vec::with_capacity(n);
-    let mut tot = MAX;
-    for _ in 0..n {
-        let b = scan
-            .get_str()?
-            .bytes()
-            .map(|b| b as usize)
-            .fold(0, |acc, b| acc | (1 << (b - 97)));
-        tot &= !b;
-        words.push(b);
-    }
-    if tot == 0 {
-        let mut dp = DP { words };
-        writeln!(out, "{}", dp.choose(MAX, n - 1))?;
-    } else {
-        writeln!(out, "0")?;
+    let (mut c1, mut c2) = (0, 0);
+    let mut buf = String::new();
+    stdin().read_line(&mut buf)?;
+    buf.as_bytes()
+        .windows(2)
+        .map(|c| (c[0], c[1]))
+        .for_each(|(l, r)| {
+            if (l, r) == (b':', b')') {
+                c1 += 1;
+            } else if (l, r) == (b':', b'(') {
+                c2 += 1;
+            }
+        });
+    match (c1, c2) {
+        (0, 0) => writeln!(out, "machine")?,
+        (_, 0) => writeln!(out, "alive")?,
+        (0, _) => writeln!(out, "undead")?,
+        _ => writeln!(out, "double agent")?,
     }
     Ok(out.flush()?)
 }

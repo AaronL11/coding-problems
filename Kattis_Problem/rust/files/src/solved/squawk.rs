@@ -161,24 +161,51 @@ impl<'a, R: Read> LineIter<'a, R> {
 
 // Solution Code
 
-const MAX: usize = 0b11111111111111111111111111;
+type Matrix = Vec<Vec<isize>>;
+type Vector = Vec<isize>;
 
-struct DP {
-    words: Vec<usize>,
+const N: usize = 101;
+
+fn id() -> Matrix {
+    (0..N)
+        .map(|i| {
+            (0..N)
+                .map(|j| if i == j { 1 } else { 0 })
+                .collect::<Vec<_>>()
+        })
+        .collect::<Vec<_>>()
 }
 
-impl DP {
-    fn choose(&mut self, l: usize, i: usize) -> usize {
-        if i == 0 {
-            if l & !self.words[0] == 0 {
-                1
-            } else {
-                0
-            }
-        } else if l == 0 {
-            1
+#[allow(non_snake_case)]
+fn mat_mul(A: &Matrix, B: &Matrix) -> Matrix {
+    (0..N)
+        .map(|i| {
+            (0..N)
+                .map(|j| (0..N).map(|k| (A[i][k] * B[k][j])).sum::<Int>())
+                .collect::<Vec<_>>()
+        })
+        .collect::<Vec<_>>()
+}
+
+#[allow(non_snake_case)]
+fn mat_vec(A: &Matrix, v: &Vector) -> Vector {
+    (0..N)
+        .map(|i| (0..N).map(|j| A[i][j] * v[j]).sum::<Int>())
+        .collect::<Vec<_>>()
+}
+
+#[allow(non_snake_case)]
+fn mat_exp(M: &Matrix, pow: usize) -> Matrix {
+    if pow == 0 {
+        id()
+    } else if pow == 1 {
+        M.clone()
+    } else {
+        let A = mat_exp(M, pow / 2);
+        if pow % 2 == 0 {
+            mat_mul(&A, &A)
         } else {
-            self.choose(l & !self.words[i], i - 1) + self.choose(l, i - 1)
+            mat_mul(&M, &mat_mul(&A, &A))
         }
     }
 }
@@ -187,23 +214,20 @@ impl DP {
 fn main() -> Result<(), StopCode> {
     let mut scan = Scanner::new(stdin().bytes());
     let mut out = BufWriter::new(stdout());
-    let n = scan.next::<Uint>()?;
-    let mut words = Vec::with_capacity(n);
-    let mut tot = MAX;
-    for _ in 0..n {
-        let b = scan
-            .get_str()?
-            .bytes()
-            .map(|b| b as usize)
-            .fold(0, |acc, b| acc | (1 << (b - 97)));
-        tot &= !b;
-        words.push(b);
+    let (_, m) = scan.take_tuple::<Uint, Uint>()?;
+    let (s, t) = scan.take_tuple::<Uint, Uint>()?;
+    let mut graph = vec![vec![0; 101]; 101];
+    for _ in 0..m {
+        let (u, v) = scan.take_tuple::<Uint, Uint>()?;
+        graph[u][v] = 1;
+        graph[v][u] = 1;
     }
-    if tot == 0 {
-        let mut dp = DP { words };
-        writeln!(out, "{}", dp.choose(MAX, n - 1))?;
-    } else {
-        writeln!(out, "0")?;
-    }
+    let mut squawk = vec![0; 101];
+    squawk[s] = 1;
+    writeln!(
+        out,
+        "{}",
+        mat_vec(&mat_exp(&graph, t), &squawk).iter().sum::<Int>()
+    )?;
     Ok(out.flush()?)
 }
