@@ -1,3 +1,4 @@
+use std::collections::VecDeque;
 use std::{str,error,fmt};
 use std::io;
 use io::{stdin,Stdin,BufRead,stdout,Stdout,BufWriter,Write};
@@ -93,21 +94,12 @@ fn solve(
     mut scan: Scanner,
     mut out: BufWriter<Stdout>
 ) -> Result<(), StopCode> {
-    loop {
-        let (n,m) = scan.take_tuple::<usize,usize>()?;
-        if (n,m) == (0,0) { break; }
-        let mut d =scan.take::<usize>(n)?;
-        d.sort_unstable();
-        let mut h =scan.take::<usize>(m)?;
-        h.sort_unstable();
-    }
     Ok(out.flush()?)
 }
 
+#[allow(dead_code)]
 fn main() -> Result<(), StopCode> {
     let scan = Scanner::new();
     let out = BufWriter::new(stdout());
     solve(scan,out)
 }
-
-
