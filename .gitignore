@@ -17,4 +17,5 @@ Cargo.lock
 
 # general
 .json
+.vscode/
 
