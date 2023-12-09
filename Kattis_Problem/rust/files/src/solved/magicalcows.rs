@@ -1,4 +1,4 @@
-![allow(dead_code)]
+#![allow(dead_code)]
 #[allow(unused_imports)]
 use std::{
     cmp,
@@ -201,4 +201,3 @@ fn main() -> Result<(), StopCode> {
     }
     Ok(out.flush()?)
 }
-

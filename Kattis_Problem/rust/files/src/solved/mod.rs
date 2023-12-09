@@ -1,3 +1,9 @@
+#![allow(unused_variables)]
+#![allow(dead_code)]
+#![allow(unused_must_use)]
+#![allow(unused_mut)]
+#![allow(unused_imports)]
+#![allow(unused_assignments)]
 mod addingwords;
 mod airconditioned;
 mod akcija;

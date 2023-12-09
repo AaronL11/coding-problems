@@ -1,3 +1,6 @@
+#![allow(unused_variables)]
+#![allow(dead_code)]
+#![allow(unused_imports)]
 use std::{
     error, fmt,
     fmt::{Display, Formatter},
@@ -177,4 +180,3 @@ fn main() -> Result<(), StopCode> {
     let out = BufWriter::new(stdout());
     solve(scan, out)
 }
-

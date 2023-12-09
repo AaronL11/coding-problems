@@ -123,7 +123,7 @@ impl Board {
             .for_each(f);
         Self(board)
     }
-    fn move(&self, piece: Piece, (x,y): (usize,usize) {
+    fn move(&self, piece: Piece, (x,y): (usize,usize)) {
         match piece {
             Piece::Queen => {
             }
