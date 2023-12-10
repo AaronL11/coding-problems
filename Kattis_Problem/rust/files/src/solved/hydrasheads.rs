@@ -161,56 +161,33 @@ impl<'a, R: Read> LineIter<'a, R> {
 
 // Solution Code
 
-type Matrix = Vec<Vec<isize>>;
-type Vector = Vec<isize>;
-
-const N: usize = 46;
-
-fn id() -> Matrix {
-    (0..N)
-        .map(|i| {
-            (0..N)
-                .map(|j| if i == j { 1 } else { 0 })
-                .collect::<Vec<_>>()
-        })
-        .collect::<Vec<_>>()
-}
-
 #[allow(non_snake_case)]
-fn mat_mul(A: &Matrix, B: &Matrix, m: isize) -> Matrix {
-    (0..N)
-        .map(|i| {
-            (0..N)
-                .map(|j| (0..N).map(|k| (A[i][k] * B[k][j]) % m).sum::<Int>() % m)
-                .collect::<Vec<_>>()
-        })
-        .collect::<Vec<_>>()
-}
-
-#[allow(non_snake_case)]
-fn mat_(A: &Matrix, v: &Vector, m: isize) -> Vector {
-    (0..N)
-        .map(|i| (0..N).map(|j| (A[i][j] * v[j]) % m).sum::<Int>() % m)
-        .collect::<Vec<_>>()
-}
-
-#[allow(non_snake_case)]
-fn mat_vec(A: &Matrix, v: &Vector, m: isize) -> isize {
-    (0..N).fold(0, |sum, i| (sum + A[1][i] * v[i]) % m) % m
-}
-
-#[allow(non_snake_case)]
-fn mat_exp(M: &Matrix, pow: usize, m: isize) -> Matrix {
-    if pow == 0 {
-        id()
-    } else if pow == 1 {
-        M.clone()
-    } else {
-        let A = mat_exp(M, pow / 2, m);
-        if pow % 2 == 0 {
-            mat_mul(&A, &A, m)
-        } else {
-            mat_mul(&M, &mat_mul(&A, &A, m), m)
+fn F(H: Uint, T: Uint) -> Int {
+    match (H, T) {
+        (0, 0) => 0,
+        (0, 1) => 6,
+        (1, 1) => 3,
+        (0, _) => {
+            if T % 4 == 0 {
+                F(T / 2, 0) + (T / 2) as isize
+            } else {
+                let d = 4 - T % 4;
+                F(0, T + d) + d as isize
+            }
+        }
+        (_, 0) => {
+            if H % 2 == 0 {
+                (H / 2) as isize
+            } else {
+                -1
+            }
+        }
+        _ => {
+            if H % 2 == 1 {
+                F(H + 1, 0) + if T > 1 { F(0, T - 2) + 1 } else { 2 }
+            } else {
+                F(H, 0) + F(0, T)
+            }
         }
     }
 }
@@ -219,35 +196,12 @@ fn mat_exp(M: &Matrix, pow: usize, m: isize) -> Matrix {
 fn main() -> Result<(), StopCode> {
     let mut scan = Scanner::new(stdin().bytes());
     let mut out = BufWriter::new(stdout());
-    let n = scan.next::<Uint>()?;
-    let mut M = vec![vec![0; N]; N];
-    M[0][0] = 1;
-    for i in 0..n + 1 {
-        M[1][i] = scan.next::<Int>()?;
-    }
-    for i in 0..n {
-        M[2 + i][i + 1] = 1;
-    }
-    let mut v = vec![0; N];
-    v[0] = 1;
-    for i in 0..n {
-        v[n - i] = scan.next::<Int>()?;
-    }
-    let Q = scan.next::<Uint>()?;
-    for _ in 0..Q {
-        let (t, m) = scan.take_tuple::<Uint, Int>()?;
-        if m == 1 {
-            writeln!(out, "0")?;
-        } else if t < n {
-            writeln!(out, "{}", v[t] % m)?;
-        } else if t == n {
-            let mv = mat_vec(&M, &v, m);
-            writeln!(out, "{}", mv)?;
-        } else {
-            let Mt = mat_exp(&M, t, m);
-            let mv = mat_vec(&Mt, &v, m);
-            writeln!(out, "{}", mv)?;
+    loop {
+        let (H, T) = scan.take_tuple::<Uint, Uint>()?;
+        if (H, T) == (0, 0) {
+            break;
         }
+        writeln!(out, "{}", F(H, T))?;
     }
     Ok(out.flush()?)
 }

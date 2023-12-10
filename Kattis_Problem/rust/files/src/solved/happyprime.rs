@@ -161,24 +161,38 @@ impl<'a, R: Read> LineIter<'a, R> {
 
 // Solution Code
 
-const MAX: usize = 0b11111111111111111111111111;
-
-struct DP {
-    words: Vec<usize>,
+#[allow(dead_code)]
+fn prime_sieve(n: usize) -> Vec<usize> {
+    assert!(n >= 2);
+    let mut primes = vec![1; n];
+    (2..n).for_each(|i| {
+        if primes[i] == 1 {
+            (i * i..n).step_by(i).for_each(|j| primes[j] = 0)
+        }
+    });
+    primes
 }
 
-impl DP {
-    fn choose(&mut self, l: usize, i: usize) -> usize {
-        if i == 0 {
-            if l & !self.words[0] == 0 {
-                1
-            } else {
-                0
-            }
-        } else if l == 0 {
-            1
-        } else {
-            self.choose(l & !self.words[i], i - 1) + self.choose(l, i - 1)
+fn f(m: Uint) -> Uint {
+    let mut n = m;
+    let mut x = 0;
+    while n > 0 {
+        let y = n % 10;
+        x += y * y;
+        n /= 10;
+    }
+    x
+}
+
+fn happy(m: Uint) -> bool {
+    let (mut x, mut y) = (m, m);
+    loop {
+        x = f(x);
+        y = f(f(y));
+        if x == 1 {
+            return true;
+        } else if x == y {
+            return false;
         }
     }
 }
@@ -187,23 +201,21 @@ impl DP {
 fn main() -> Result<(), StopCode> {
     let mut scan = Scanner::new(stdin().bytes());
     let mut out = BufWriter::new(stdout());
-    let n = scan.next::<Uint>()?;
-    let mut words = Vec::with_capacity(n);
-    let mut tot = MAX;
-    for _ in 0..n {
-        let b = scan
-            .get_str()?
-            .bytes()
-            .map(|b| b as usize)
-            .fold(0, |acc, b| acc | (1 << (b - 97)));
-        tot &= !b;
-        words.push(b);
-    }
-    if tot == 0 {
-        let mut dp = DP { words };
-        writeln!(out, "{}", dp.choose(MAX, n - 1))?;
-    } else {
-        writeln!(out, "0")?;
+    let primes = prime_sieve(10_001);
+    let P = scan.next()?;
+    for _ in 0..P {
+        let (K, m) = scan.take_tuple::<Uint, Uint>()?;
+        writeln!(
+            out,
+            "{} {} {}",
+            K,
+            m,
+            if m != 1 && primes[m] == 1 && happy(m) {
+                "YES"
+            } else {
+                "NO"
+            }
+        )?;
     }
     Ok(out.flush()?)
 }
