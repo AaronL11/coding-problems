@@ -1,7 +1,6 @@
 //mod grandpabernie;
 mod cardmagic;
 mod cardtrick2;
-mod drmmessages;
 mod gamerank;
 mod hidingplaces;
 mod hopper;
@@ -18,4 +17,3 @@ mod shortestpath3;
 mod sumsquareddigits;
 mod t48;
 mod tilde;
-mod workstations;

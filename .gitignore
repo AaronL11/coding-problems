@@ -15,3 +15,7 @@ Cargo.lock
 # C++
 .out
 
+# general
+.json
+.vscode/
+
